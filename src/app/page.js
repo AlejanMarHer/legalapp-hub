@@ -1,6 +1,6 @@
 import React from 'react';
 
-export default function LegalAppHub() {
+export default function LitisAppHub() {
   return (
     <div className="min-h-screen bg-[#F8FAFC] font-sans text-gray-800">
       
@@ -9,7 +9,8 @@ export default function LegalAppHub() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16 items-center">
             <div className="flex-shrink-0 flex items-center">
-              <span className="text-white text-2xl font-bold tracking-tight">LegalApp</span>
+              {/* Actualizado a LitisApp */}
+              <span className="text-white text-2xl font-bold tracking-tight">LitisApp</span>
             </div>
             <div>
               <button className="bg-white text-[#1E3A8A] hover:bg-gray-100 px-4 py-2 rounded-md text-sm font-semibold transition-colors shadow-sm">
@@ -59,7 +60,7 @@ export default function LegalAppHub() {
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8 hover:shadow-md transition-shadow flex flex-col h-full">
             <div className="w-12 h-12 bg-blue-100 text-[#1E3A8A] rounded-lg flex items-center justify-center mb-6">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0-2.08-.402-2.599-1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
               </svg>
             </div>
             <h3 className="text-2xl font-bold text-gray-900 mb-3">Liquidador Laboral</h3>
@@ -81,7 +82,8 @@ export default function LegalAppHub() {
 
       {/* Footer */}
       <footer className="bg-gray-900 text-gray-400 py-8 text-center text-sm">
-        <p>&copy; {new Date().getFullYear()} LegalApp. Todos los derechos reservados.</p>
+        {/* Actualizado a LitisApp */}
+        <p>&copy; {new Date().getFullYear()} LitisApp. Todos los derechos reservados.</p>
       </footer>
     </div>
   );
