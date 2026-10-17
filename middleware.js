@@ -4,9 +4,9 @@ export default clerkMiddleware();
 
 export const config = {
   matcher: [
-    // Ignora archivos internos de Next.js y archivos estáticos
+    // Skip Next.js internals and all static files, unless found in search params
     '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
-    // Siempre se ejecuta para las rutas de la API
+    // Always run for API routes
     '/(api|trpc)(.*)',
   ],
 };
