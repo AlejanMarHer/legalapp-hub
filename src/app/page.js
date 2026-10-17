@@ -1,6 +1,11 @@
 import React from 'react';
+import { SignInButton, UserButton } from '@clerk/nextjs';
+import { auth } from '@clerk/nextjs/server';
 
-export default function LitisAppHub() {
+export default async function LitisAppHub() {
+  // Consultamos al servidor de Clerk si el usuario ya inició sesión
+  const { userId } = await auth();
+
   return (
     <div className="min-h-screen bg-[#F8FAFC] font-sans text-gray-800">
       
@@ -9,14 +14,24 @@ export default function LitisAppHub() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16 items-center">
             <div className="flex-shrink-0 flex items-center">
-              {/* Actualizado a LitisApp */}
               <span className="text-white text-2xl font-bold tracking-tight">LitisApp</span>
             </div>
+            
+            {/* Lógica de Autenticación con Clerk (Actualizada a Core 3) */}
             <div>
-              <button className="bg-white text-[#1E3A8A] hover:bg-gray-100 px-4 py-2 rounded-md text-sm font-semibold transition-colors shadow-sm">
-                Iniciar Sesión
-              </button>
+              {userId ? (
+                // Si hay un userId, mostramos el Avatar del usuario
+                <UserButton />
+              ) : (
+                // Si no hay userId, mostramos el botón de Iniciar Sesión
+                <SignInButton mode="modal">
+                  <button className="bg-white text-[#1E3A8A] hover:bg-gray-100 px-4 py-2 rounded-md text-sm font-semibold transition-colors shadow-sm">
+                    Iniciar Sesión
+                  </button>
+                </SignInButton>
+              )}
             </div>
+
           </div>
         </div>
       </nav>
@@ -82,7 +97,6 @@ export default function LitisAppHub() {
 
       {/* Footer */}
       <footer className="bg-gray-900 text-gray-400 py-8 text-center text-sm">
-        {/* Actualizado a LitisApp */}
         <p>&copy; {new Date().getFullYear()} LitisApp. Todos los derechos reservados.</p>
       </footer>
     </div>
