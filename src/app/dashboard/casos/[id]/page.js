@@ -4,7 +4,6 @@ import { redirect } from 'next/navigation';
 import { PrismaClient } from '@prisma/client';
 import Link from 'next/link';
 
-// Esta línea obliga a Vercel a renderizar la página en vivo, evitando el error de caché "This page couldn't load"
 export const dynamic = 'force-dynamic';
 
 const prisma = global.prisma || new PrismaClient();
@@ -14,14 +13,15 @@ export default async function DetalleCasoPage({ params }) {
   const user = await currentUser();
   if (!user) redirect('/');
 
-  // 1. Extraemos el ID dinámico de la URL
-  const casoId = params.id;
+  // 1. Extraemos el ID dinámico de la URL (con await para compatibilidad con Next.js 15+)
+  const resolvedParams = await params;
+  const casoId = resolvedParams.id;
 
-  // 2. Buscamos el caso y sus liquidaciones guardadas
-  const caso = await prisma.caso.findUnique({
+  // 2. Buscamos el caso (¡CORREGIDO!: Usamos findFirst en lugar de findUnique para poder filtrar por tu userId)
+  const caso = await prisma.caso.findFirst({
     where: { 
       id: casoId, 
-      userId: user.id // Filtro de seguridad
+      userId: user.id 
     },
     include: { 
       liquidaciones: { orderBy: { createdAt: 'desc' } } 
