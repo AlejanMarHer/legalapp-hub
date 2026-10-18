@@ -42,7 +42,7 @@ function LiquidadorLaboralApp() {
   const [isGeneratingExcel, setIsGeneratingExcel] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
-  // DICCIONARIO HISTÓRICO DE SALARIOS
+  // DICCIONARIO HISTÓRICO DE SALARIOS (Sintaxis JS pura)
   const historicalWages = {
     2023: { smmlv: 1160000, aux: 140606 },
     2024: { smmlv: 1300000, aux: 162000 },
