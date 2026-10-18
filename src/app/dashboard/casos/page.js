@@ -13,7 +13,6 @@ export default async function CasosPage() {
   const user = await currentUser();
   if (!user) redirect('/');
 
-  // Obtener los casos del usuario actual, ordenados del más reciente al más antiguo
   const casos = await prisma.caso.findMany({
     where: { userId: user.id },
     orderBy: { createdAt: 'desc' }
@@ -22,7 +21,17 @@ export default async function CasosPage() {
   return (
     <div className="p-8 max-w-7xl mx-auto w-full">
       
-      {/* Encabezado y botón de Nuevo Expediente */}
+      {/* NUEVO BOTÓN DE VOLVER */}
+      <div className="mb-6">
+        <Link 
+          href="/dashboard" 
+          className="inline-flex items-center text-sm font-semibold text-[#1E3A8A] hover:text-blue-700 transition gap-1.5 bg-white border border-blue-100 px-4 py-2 rounded-xl shadow-sm"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+          Volver al Despacho
+        </Link>
+      </div>
+
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
         <div>
           <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Expedientes Activos</h1>
@@ -37,7 +46,6 @@ export default async function CasosPage() {
         </Link>
       </div>
 
-      {/* Tabla de Expedientes */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
         {casos.length === 0 ? (
           <div className="p-12 text-center">
