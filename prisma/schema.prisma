@@ -9,14 +9,29 @@ datasource db {
 }
 
 model Caso {
-  id          String   @id @default(cuid())
-  userId      String   // ID del abogado (Clerk)
-  radicado    String?  // Ej. 110014003...
-  demandante  String
-  demandado   String
-  juzgado     String?
-  estado      String   @default("Activo")
+  id            String         @id @default(cuid())
+  userId        String         // ID del abogado (Clerk)
+  radicado      String?
+  demandante    String
+  demandado     String
+  juzgado       String?
+  estado        String         @default("Activo")
   
+  // Esta línea crea la conexión: Un caso tiene muchas liquidaciones
+  liquidaciones Liquidacion[]  
+  
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+}
+
+model Liquidacion {
+  id          String   @id @default(cuid())
+  tipo        String   // Ej. "Intereses", "Indexación", "Laboral"
+  datos       Json     // Aquí guardaremos todos los números y resultados
+  
+  // Conexión obligatoria con el Expediente
+  casoId      String
+  caso        Caso     @relation(fields: [casoId], references: [id], onDelete: Cascade)
+
   createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
 }

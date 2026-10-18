@@ -91,7 +91,9 @@ export default async function CasosPage() {
                     <td className="px-6 py-5 text-right">
                       <button className="text-blue-600 hover:text-blue-800 font-bold text-sm bg-blue-50 hover:bg-blue-100 px-4 py-2 rounded-lg transition">
                         Abrir Expediente
-                      </button>
+                      <Link href={`/dashboard/casos/${caso.id}`} className="inline-block text-blue-600 hover:text-blue-800 font-bold text-sm bg-blue-50 hover:bg-blue-100 px-4 py-2 rounded-lg transition">
+  Abrir Expediente
+</Link>
                     </td>
                   </tr>
                 ))}
