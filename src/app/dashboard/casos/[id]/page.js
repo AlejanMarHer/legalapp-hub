@@ -13,11 +13,9 @@ export default async function DetalleCasoPage({ params }) {
   const user = await currentUser();
   if (!user) redirect('/');
 
-  // 1. Extraemos el ID dinámico de la URL (con await para compatibilidad con Next.js 15+)
   const resolvedParams = await params;
   const casoId = resolvedParams.id;
 
-  // 2. Buscamos el caso (¡CORREGIDO!: Usamos findFirst en lugar de findUnique para poder filtrar por tu userId)
   const caso = await prisma.caso.findFirst({
     where: { 
       id: casoId, 
@@ -75,7 +73,6 @@ export default async function DetalleCasoPage({ params }) {
             <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
                Nueva Liquidación
             </h3>
-            {/* Estos enlaces envían el casoId secreto en la URL */}
             <Link href={`/dashboard/intereses?casoId=${caso.id}`} className="block w-full bg-white border border-gray-200 p-4 rounded-xl shadow-sm hover:border-blue-500 hover:shadow-md transition text-left group">
               <span className="block font-bold text-[#1E3A8A] group-hover:text-blue-600 transition">Calcular Intereses</span>
               <span className="text-xs text-gray-500 mt-1 block">Corrientes y moratorios (SFC)</span>
@@ -102,7 +99,30 @@ export default async function DetalleCasoPage({ params }) {
               </div>
             ) : (
               <div className="space-y-4">
-                 {/* Aquí mapearemos las liquidaciones en el paso final */}
+                 {/* === MAPEO DE LIQUIDACIONES GUARDADAS === */}
+                 {caso.liquidaciones.map((liq) => (
+                    <div key={liq.id} className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition">
+                      <div className="flex justify-between items-start mb-4">
+                        <div>
+                          <span className="bg-blue-100 text-blue-800 text-xs font-bold px-3 py-1 rounded-full">{liq.tipo}</span>
+                          <p className="text-sm text-gray-500 mt-2 font-medium">
+                            Guardado el: {new Date(liq.createdAt).toLocaleDateString('es-CO')} a las {new Date(liq.createdAt).toLocaleTimeString('es-CO', {hour: '2-digit', minute:'2-digit'})}
+                          </p>
+                        </div>
+                      </div>
+                      
+                      <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
+                        <p className="text-sm text-slate-500 mb-1 font-bold">GRAN TOTAL LIQUIDADO:</p>
+                        <p className="text-2xl font-black text-emerald-700">
+                          {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP' }).format(liq.datos?.granTotalFinal || 0)}
+                        </p>
+                      </div>
+                      
+                      <div className="mt-4 pt-4 border-t border-gray-100">
+                        <p className="text-xs text-gray-500 line-clamp-2 italic">"{liq.datos?.textoMemorial}"</p>
+                      </div>
+                    </div>
+                 ))}
               </div>
             )}
           </div>
