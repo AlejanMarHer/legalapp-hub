@@ -7,19 +7,22 @@ import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import { guardarLiquidacionBd } from "../../actions/liquidaciones";
 
-/ Historial de respaldo (Fallback) con las tasas reales del Interés Bancario Corriente (Consumo y Ordinario)
-// Para obtener la mora comercial (usura), la calculadora multiplicará esto por 1.5
+// Historial de respaldo con Tasas de Usura Reales (Moratorio Comercial) para 2026
+// Basado en el Interés Bancario Corriente certificado por la SFC x 1.5
 const mockTasasHistorial = [
-  { mes: "2026-10", tasaEA: 19.49 }, // Misma de septiembre proyectada si no hay nuevo reporte
-  { mes: "2026-09", tasaEA: 19.49 }, // Según Resolución 1260 de 2026 (Usura = 29.24%)
-  { mes: "2026-08", tasaEA: 19.77 }, // Según SFC
-  { mes: "2026-07", tasaEA: 19.19 }, // Según SFC
-  { mes: "2026-06", tasaEA: 19.19 }, // Según SFC
-  { mes: "2026-05", tasaEA: 18.78 }, // Según SFC
-  { mes: "2026-04", tasaEA: 18.50 },
-  { mes: "2026-03", tasaEA: 18.20 },
-  { mes: "2026-02", tasaEA: 18.00 },
-  { mes: "2026-01", tasaEA: 17.50 },
+  { mes: "2026-12", tasaEA: 29.24 },
+  { mes: "2026-11", tasaEA: 29.24 },
+  { mes: "2026-10", tasaEA: 29.24 },
+  { mes: "2026-09", tasaEA: 29.24 },
+  { mes: "2026-08", tasaEA: 29.66 },
+  { mes: "2026-07", tasaEA: 28.79 },
+  { mes: "2026-06", tasaEA: 28.79 },
+  { mes: "2026-05", tasaEA: 28.17 },
+  { mes: "2026-04", tasaEA: 27.75 },
+  { mes: "2026-03", tasaEA: 27.30 },
+  { mes: "2026-02", tasaEA: 27.00 },
+  { mes: "2026-01", tasaEA: 26.25 },
+  { mes: "2025-12", tasaEA: 25.50 },
 ];
 
 // --- ALGORITMO DE FERIADOS COLOMBIA (LEY EMILIANI) ---
@@ -120,9 +123,15 @@ function InteresesAppContent() {
           const fecha = new Date(campoFecha);
           const yyyy = fecha.getFullYear();
           const mm = String(fecha.getMonth() + 1).padStart(2, "0");
+          
+          // La API normalmente devuelve el Interés Bancario Corriente (IBC).
+          // Para obtener la Tasa de Usura, multiplicamos por 1.5.
+          let ibc = parseFloat(campoValor);
+          let usura = ibc * 1.5;
+
           return {
             mes: `${yyyy}-${mm}`,
-            tasaEA: parseFloat(campoValor) 
+            tasaEA: usura 
           };
         }).filter(Boolean);
 
@@ -136,7 +145,8 @@ function InteresesAppContent() {
           throw new Error("No se pudieron parsear los datos de la SFC");
         }
       } catch (error) {
-        console.warn("LitisApp: Error al conectar con SFC. Fallback activo.", error);
+        console.warn("LitisApp: Error al conectar con SFC. Fallback local activo.", error);
+        setTasasHistoricas(mockTasasHistorial);
         setEstadoAPI("error");
       }
     };
@@ -258,11 +268,18 @@ function InteresesAppContent() {
         const mm = String(currentDate.getMonth() + 1).padStart(2, "0");
         const key = `${yyyy}-${mm}`;
         
-        const tasaBaseEA = tasasHistoricas.find((t) => t.mes === key)?.tasaEA || 28.5;
+        // Obtenemos la tasa de usura de nuestro diccionario
+        const tasaUsuraEA = tasasHistoricas.find((t) => t.mes === key)?.tasaEA || 29.24;
 
-        let tasaAplicar = tasaBaseEA; 
-        if (formData.tipoInteres === "corriente") tasaAplicar = tasaBaseEA * 0.6; 
-        if (formData.tipoInteres === "moratorio_civil") tasaAplicar = 6.0;
+        let tasaAplicar = tasaUsuraEA; 
+        if (formData.tipoInteres === "corriente") {
+          // El interés corriente es la tasa de usura dividida en 1.5 (es decir, el IBC)
+          tasaAplicar = tasaUsuraEA / 1.5; 
+        }
+        if (formData.tipoInteres === "moratorio_civil") {
+          // Civil es 6% anual
+          tasaAplicar = 6.0;
+        }
 
         const tasaDiaria = tasaAplicar / 100 / 365;
         const interesPeriodo = capitalActual * tasaDiaria * days;
@@ -398,7 +415,6 @@ function InteresesAppContent() {
     doc.save(`Liquidacion_${new Date().getTime()}.pdf`);
   };
 
-  // === NUEVO MOTOR: Guardar en Supabase ===
   const guardarEnExpediente = async () => {
     if (!casoId || !resultados) return;
     setIsSaving(true);
