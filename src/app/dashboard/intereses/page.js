@@ -7,14 +7,19 @@ import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import { guardarLiquidacionBd } from "../../actions/liquidaciones";
 
-// Historial de respaldo (Fallback) por si la API de Datos Abiertos falla
+/ Historial de respaldo (Fallback) con las tasas reales del Interés Bancario Corriente (Consumo y Ordinario)
+// Para obtener la mora comercial (usura), la calculadora multiplicará esto por 1.5
 const mockTasasHistorial = [
-  { mes: "2026-10", tasaEA: 28.5 },
-  { mes: "2026-09", tasaEA: 28.8 },
-  { mes: "2026-08", tasaEA: 29.1 },
-  { mes: "2026-07", tasaEA: 29.3 },
-  { mes: "2026-06", tasaEA: 29.5 },
-  { mes: "2026-05", tasaEA: 29.8 },
+  { mes: "2026-10", tasaEA: 19.49 }, // Misma de septiembre proyectada si no hay nuevo reporte
+  { mes: "2026-09", tasaEA: 19.49 }, // Según Resolución 1260 de 2026 (Usura = 29.24%)
+  { mes: "2026-08", tasaEA: 19.77 }, // Según SFC
+  { mes: "2026-07", tasaEA: 19.19 }, // Según SFC
+  { mes: "2026-06", tasaEA: 19.19 }, // Según SFC
+  { mes: "2026-05", tasaEA: 18.78 }, // Según SFC
+  { mes: "2026-04", tasaEA: 18.50 },
+  { mes: "2026-03", tasaEA: 18.20 },
+  { mes: "2026-02", tasaEA: 18.00 },
+  { mes: "2026-01", tasaEA: 17.50 },
 ];
 
 // --- ALGORITMO DE FERIADOS COLOMBIA (LEY EMILIANI) ---
