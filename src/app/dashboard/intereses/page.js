@@ -83,36 +83,24 @@ export default function InteresesApp() {
   const [resultados, setResultados] = useState(null);
   const [alertaFeriado, setAlertaFeriado] = useState(null);
 
-  // --- ESTADOS PARA LA API DE LA SFC ---
   const [tasasHistoricas, setTasasHistoricas] = useState(mockTasasHistorial);
-  const [estadoAPI, setEstadoAPI] = useState("cargando"); // "cargando", "conectado", "error"
+  const [estadoAPI, setEstadoAPI] = useState("cargando");
 
-  // --- EFECTO PARA CONSUMIR LA API (DATOS ABIERTOS COLOMBIA) ---
   useEffect(() => {
     const obtenerTasasSFC = async () => {
       try {
-        // Dataset oficial actualizado de la SFC (Tasa de interés bancario corriente -TIBC)
         const baseUrl = "https://www.datos.gov.co/resource/pare-7x5i.json";
-        
-        // Pedimos los últimos 100 registros para garantizar que tengamos un buen histórico
-        const params = new URLSearchParams({
-          "$limit": "100"
-        });
-        
+        const params = new URLSearchParams({ "$limit": "100" });
         const urlAPI = `${baseUrl}?${params.toString()}`;
         
         const respuesta = await fetch(urlAPI);
         if (!respuesta.ok) throw new Error(`Falla en la API: ${respuesta.status}`);
 
         const datos = await respuesta.json();
-        
         if (datos.length === 0) throw new Error("Datos vacíos de la SFC");
 
         const tasasMapeadas = datos.map((item) => {
-          // Búsqueda inteligente de columnas (el gobierno suele cambiar los nombres)
-          // Busca el campo de fecha (vigenciadesde, fecha, fecha_inicio, etc.)
           const campoFecha = item.vigenciadesde || item.fecha || item.fecha_inicio || Object.values(item).find(v => typeof v === 'string' && v.includes('T00:00:00'));
-          // Busca el campo de valor (valor, tasa, tasa_interes, etc.)
           const campoValor = item.valor || item.tasa || item.tasa_interes || item.interes_bancario_corriente;
 
           if (!campoFecha || !campoValor) return null;
@@ -124,12 +112,9 @@ export default function InteresesApp() {
             mes: `${yyyy}-${mm}`,
             tasaEA: parseFloat(campoValor) 
           };
-        }).filter(Boolean); // Elimina registros nulos si hubo problemas de formato
+        }).filter(Boolean);
 
-        // Ordenamos del más reciente al más antiguo por seguridad
         tasasMapeadas.sort((a, b) => b.mes.localeCompare(a.mes));
-
-        // Filtramos para que solo quede un registro por mes (evitando duplicados de modalidades)
         const tasasUnicas = Array.from(new Map(tasasMapeadas.map(item => [item.mes, item])).values());
 
         if (tasasUnicas.length > 0) {
@@ -159,6 +144,52 @@ export default function InteresesApp() {
     setAbonos(nuevosAbonos);
   };
   const eliminarAbono = (index) => setAbonos(abonos.filter((_, i) => i !== index));
+
+  // --- LÓGICA PARA PEGAR DESDE EXCEL ---
+  const handlePasteAbonos = (e) => {
+    e.preventDefault();
+    const pasteData = e.clipboardData.getData("text");
+    if (!pasteData) return;
+
+    const rows = pasteData.split(/\r?\n/);
+    const nuevosAbonos = [];
+
+    rows.forEach(row => {
+      const cols = row.split("\t");
+      if (cols.length >= 2) {
+        let rawDate = cols[0].trim();
+        let parsedDate = "";
+
+        // Formatear fecha colombiana (DD/MM/YYYY) o estándar (YYYY-MM-DD)
+        if (rawDate.includes("/")) {
+          const p = rawDate.split("/");
+          if (p.length === 3) parsedDate = `${p[2]}-${p[1].padStart(2, '0')}-${p[0].padStart(2, '0')}`;
+        } else if (rawDate.includes("-")) {
+          const p = rawDate.split("-");
+          if (p.length === 3) {
+            parsedDate = p[0].length === 4 ? rawDate : `${p[2]}-${p[1].padStart(2, '0')}-${p[0].padStart(2, '0')}`;
+          }
+        }
+
+        // Limpiar el monto de signos $, puntos y dejar solo números o decimales
+        let rawAmount = cols[1].replace(/[^0-9,-]+/g, "").replace(",", ".");
+        let parsedAmount = parseFloat(rawAmount);
+
+        if (parsedDate && !isNaN(parsedAmount) && parsedAmount > 0) {
+          nuevosAbonos.push({ fecha: parsedDate, monto: parsedAmount.toString() });
+        }
+      }
+    });
+
+    if (nuevosAbonos.length > 0) {
+      setAbonos([...abonos, ...nuevosAbonos]);
+      // Limpiamos el textarea después de procesar
+      e.target.value = "";
+    } else {
+      alert("No se detectó un formato válido. Asegúrate de copiar desde Excel 2 columnas sin títulos: [Fecha] y [Monto].");
+    }
+  };
+
   const parseDate = (dateStr) => new Date(`${dateStr}T12:00:00`);
 
   const formatMoneda = (valor) => {
@@ -418,7 +449,6 @@ export default function InteresesApp() {
                         <p className="text-xs text-gray-500">Seleccione el régimen de tasa aplicable.</p>
                       </div>
                       
-                      {/* BADGE DE ESTADO DE LA API SFC */}
                       {estadoAPI === "cargando" && (
                          <span className="text-[10px] font-semibold bg-gray-100 text-gray-500 px-2 py-1 rounded flex items-center gap-1">
                            <span className="animate-pulse h-1.5 w-1.5 bg-gray-400 rounded-full"></span> Conectando con SFC...
@@ -446,11 +476,22 @@ export default function InteresesApp() {
               </div>
 
               <div className="bg-white rounded-xl p-6 border border-gray-150/80 space-y-4">
-                <div className="flex justify-between items-center border-b pb-3">
+                <div className="flex justify-between items-start md:items-center border-b pb-3 flex-col md:flex-row gap-3">
                   <div>
                     <h2 className="text-lg font-bold text-gray-800">💸 Abonos a la Obligación</h2>
                     <p className="text-xs text-gray-500 mt-0.5">Pagos parciales realizados (aplicación art. 881 C.Co).</p>
                   </div>
+                </div>
+
+                {/* ZONA DE PEGADO DE EXCEL */}
+                <div className="bg-blue-50/50 border border-blue-100 rounded-xl p-4">
+                  <label className="block text-xs font-bold text-[#1E3A8A] mb-1">⚡ Pegado Masivo desde Excel</label>
+                  <p className="text-[10px] text-gray-500 mb-2">Copia en tu Excel dos columnas sin encabezados (1. Fecha DD/MM/AAAA | 2. Monto) y haz Ctrl+V adentro del recuadro.</p>
+                  <textarea
+                    className="w-full h-12 bg-white border border-dashed border-blue-300 rounded-lg text-xs p-3 text-gray-500 outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent resize-none transition"
+                    placeholder="Haz clic aquí y presiona Ctrl + V para pegar tus abonos..."
+                    onPaste={handlePasteAbonos}
+                  ></textarea>
                 </div>
 
                 {abonos.length === 0 ? (
@@ -480,7 +521,7 @@ export default function InteresesApp() {
                 )}
 
                 <button type="button" onClick={agregarAbono} className="w-full py-4 border-2 border-dashed border-blue-200 hover:border-blue-400 text-[#1E3A8A] rounded-xl font-bold flex items-center justify-center gap-2 transition bg-white/50 hover:bg-blue-50/30 text-sm cursor-pointer">
-                  <span>+ Añadir abono a la liquidación</span>
+                  <span>+ Añadir abono manualmente</span>
                 </button>
               </div>
 
