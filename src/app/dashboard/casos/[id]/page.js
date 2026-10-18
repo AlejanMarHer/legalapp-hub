@@ -3,6 +3,7 @@ import { currentUser } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
 import { PrismaClient } from '@prisma/client';
 import Link from 'next/link';
+import { revalidatePath } from 'next/cache';
 
 export const dynamic = 'force-dynamic';
 
@@ -28,11 +29,24 @@ export default async function DetalleCasoPage({ params }) {
 
   if (!caso) redirect('/dashboard/casos');
 
+  // === NUEVO MOTOR: Función para eliminar un cálculo ===
+  async function borrarLiquidacion(formData) {
+    'use server';
+    const liquidacionId = formData.get('liquidacionId');
+    
+    // Borramos de la base de datos Supabase
+    await prisma.liquidacion.delete({
+      where: { id: liquidacionId }
+    });
+    
+    // Refrescamos la pantalla al instante
+    revalidatePath(`/dashboard/casos/${casoId}`);
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 flex">
       <main className="flex-1 p-8 max-w-5xl mx-auto">
         
-        {/* Encabezado */}
         <div className="mb-8">
           <Link href="/dashboard/casos" className="text-blue-600 hover:text-blue-800 font-medium flex items-center gap-2 mb-4">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
@@ -42,7 +56,6 @@ export default async function DetalleCasoPage({ params }) {
           <p className="text-gray-500 mt-2 font-medium">Gestión documental y cálculos del proceso.</p>
         </div>
 
-        {/* Tarjeta Principal de Información */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 mb-8 relative overflow-hidden">
           <div className="absolute top-0 left-0 w-2 h-full bg-[#1E3A8A]"></div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -65,10 +78,8 @@ export default async function DetalleCasoPage({ params }) {
           </div>
         </div>
 
-        {/* Sección Inferior: Herramientas e Historial */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           
-          {/* Columna Izquierda: Acciones Rápidas */}
           <div className="lg:col-span-1 space-y-4">
             <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
                Nueva Liquidación
@@ -87,7 +98,6 @@ export default async function DetalleCasoPage({ params }) {
             </Link>
           </div>
 
-          {/* Columna Derecha: Historial de Liquidaciones */}
           <div className="lg:col-span-2">
             <h3 className="text-lg font-bold text-gray-900 mb-4">Historial de Cálculos Guardados</h3>
             
@@ -99,10 +109,18 @@ export default async function DetalleCasoPage({ params }) {
               </div>
             ) : (
               <div className="space-y-4">
-                 {/* === MAPEO DE LIQUIDACIONES GUARDADAS === */}
                  {caso.liquidaciones.map((liq) => (
-                    <div key={liq.id} className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition">
-                      <div className="flex justify-between items-start mb-4">
+                    <div key={liq.id} className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition relative">
+                      
+                      {/* === NUEVO BOTÓN DE ELIMINAR CON FORMULARIO === */}
+                      <form action={borrarLiquidacion} className="absolute top-6 right-6">
+                        <input type="hidden" name="liquidacionId" value={liq.id} />
+                        <button type="submit" className="text-red-400 hover:text-red-700 transition bg-red-50 hover:bg-red-100 p-2 rounded-lg" title="Eliminar este cálculo">
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                        </button>
+                      </form>
+
+                      <div className="flex justify-between items-start mb-4 pr-12">
                         <div>
                           <span className="bg-blue-100 text-blue-800 text-xs font-bold px-3 py-1 rounded-full">{liq.tipo}</span>
                           <p className="text-sm text-gray-500 mt-2 font-medium">
