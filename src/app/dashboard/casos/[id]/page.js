@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import { PrismaClient } from '@prisma/client';
 import Link from 'next/link';
 import { revalidatePath } from 'next/cache';
+import BotonEliminar from './BotonEliminar';
 
 export const dynamic = 'force-dynamic';
 
@@ -29,17 +30,15 @@ export default async function DetalleCasoPage({ params }) {
 
   if (!caso) redirect('/dashboard/casos');
 
-  // === NUEVO MOTOR: Función para eliminar un cálculo ===
+  // Función segura de servidor para borrar (ahora es llamada desde el BotonEliminar)
   async function borrarLiquidacion(formData) {
     'use server';
     const liquidacionId = formData.get('liquidacionId');
     
-    // Borramos de la base de datos Supabase
     await prisma.liquidacion.delete({
       where: { id: liquidacionId }
     });
     
-    // Refrescamos la pantalla al instante
     revalidatePath(`/dashboard/casos/${casoId}`);
   }
 
@@ -112,13 +111,8 @@ export default async function DetalleCasoPage({ params }) {
                  {caso.liquidaciones.map((liq) => (
                     <div key={liq.id} className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition relative">
                       
-                      {/* === NUEVO BOTÓN DE ELIMINAR CON FORMULARIO === */}
-                      <form action={borrarLiquidacion} className="absolute top-6 right-6">
-                        <input type="hidden" name="liquidacionId" value={liq.id} />
-                        <button type="submit" className="text-red-400 hover:text-red-700 transition bg-red-50 hover:bg-red-100 p-2 rounded-lg" title="Eliminar este cálculo">
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                        </button>
-                      </form>
+                      {/* === BOTÓN CON ADVERTENCIA === */}
+                      <BotonEliminar liquidacionId={liq.id} borrarAction={borrarLiquidacion} />
 
                       <div className="flex justify-between items-start mb-4 pr-12">
                         <div>
