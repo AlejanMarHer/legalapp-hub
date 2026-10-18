@@ -1,0 +1,22 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Caso {
+  id          String   @id @default(cuid())
+  userId      String   // ID del abogado (Clerk)
+  radicado    String?  // Ej. 110014003...
+  demandante  String
+  demandado   String
+  juzgado     String?
+  estado      String   @default("Activo")
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}

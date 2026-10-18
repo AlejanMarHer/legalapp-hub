@@ -20,7 +20,7 @@ export default async function Dashboard() {
         <nav className="flex-1 p-4">
           <ul className="space-y-2">
             <li className="bg-blue-800 rounded-md p-3 font-medium">Mis Herramientas</li>
-            <li className="p-3 text-blue-200 hover:text-white cursor-not-allowed opacity-50">Mis Casos (Próximamente)</li>
+            <li><Link className="block p-3 text-blue-200 hover:bg-blue-800 rounded-md transition font-medium" href="/dashboard/casos">Mis Casos</Link></li>
           </ul>
         </nav>
       </aside>
