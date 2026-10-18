@@ -1,9 +1,11 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
+import { useSearchParams, useRouter } from "next/navigation";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
+import { guardarLiquidacionBd } from "../../actions/liquidaciones";
 
 // Historial de respaldo (Fallback) por si la API de Datos Abiertos falla
 const mockTasasHistorial = [
@@ -71,7 +73,11 @@ const getSiguienteDiaHabil = (dateObj) => {
   return d;
 };
 
-export default function InteresesApp() {
+function InteresesAppContent() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const casoId = searchParams.get('casoId');
+
   const [formData, setFormData] = useState({
     capital: "",
     fechaInicio: "",
@@ -82,6 +88,7 @@ export default function InteresesApp() {
   const [abonos, setAbonos] = useState([]);
   const [resultados, setResultados] = useState(null);
   const [alertaFeriado, setAlertaFeriado] = useState(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   const [tasasHistoricas, setTasasHistoricas] = useState(mockTasasHistorial);
   const [estadoAPI, setEstadoAPI] = useState("cargando");
@@ -145,7 +152,6 @@ export default function InteresesApp() {
   };
   const eliminarAbono = (index) => setAbonos(abonos.filter((_, i) => i !== index));
 
-  // --- LÓGICA PARA PEGAR DESDE EXCEL ---
   const handlePasteAbonos = (e) => {
     e.preventDefault();
     const pasteData = e.clipboardData.getData("text");
@@ -160,7 +166,6 @@ export default function InteresesApp() {
         let rawDate = cols[0].trim();
         let parsedDate = "";
 
-        // Formatear fecha colombiana (DD/MM/YYYY) o estándar (YYYY-MM-DD)
         if (rawDate.includes("/")) {
           const p = rawDate.split("/");
           if (p.length === 3) parsedDate = `${p[2]}-${p[1].padStart(2, '0')}-${p[0].padStart(2, '0')}`;
@@ -171,7 +176,6 @@ export default function InteresesApp() {
           }
         }
 
-        // Limpiar el monto de signos $, puntos y dejar solo números o decimales
         let rawAmount = cols[1].replace(/[^0-9,-]+/g, "").replace(",", ".");
         let parsedAmount = parseFloat(rawAmount);
 
@@ -183,7 +187,6 @@ export default function InteresesApp() {
 
     if (nuevosAbonos.length > 0) {
       setAbonos([...abonos, ...nuevosAbonos]);
-      // Limpiamos el textarea después de procesar
       e.target.value = "";
     } else {
       alert("No se detectó un formato válido. Asegúrate de copiar desde Excel 2 columnas sin títulos: [Fecha] y [Monto].");
@@ -390,13 +393,36 @@ export default function InteresesApp() {
     doc.save(`Liquidacion_${new Date().getTime()}.pdf`);
   };
 
+  // === NUEVO MOTOR: Guardar en Supabase ===
+  const guardarEnExpediente = async () => {
+    if (!casoId || !resultados) return;
+    setIsSaving(true);
+    try {
+      const tipoInteresNombre = 
+        formData.tipoInteres === "moratorio_comercial" ? "Moratorio Comercial (SFC)" :
+        formData.tipoInteres === "corriente" ? "Remuneratorio / Corriente" : "Moratorio Civil";
+
+      const payloadGuardado = {
+        granTotalFinal: resultados.totales.totalAPagar,
+        textoMemorial: `Liquidación de crédito mediante el régimen de interés ${tipoInteresNombre}. Capital base procesado: ${formatMoneda(resultados.totales.capitalInicial)} dede el ${formData.fechaInicio} hasta el ${formData.fechaFin}. Saldo de intereses causados pendientes: ${formatMoneda(resultados.totales.interesPendiente)}. Saldo a capital actual: ${formatMoneda(resultados.totales.capitalFinal)}. TOTAL LIQUIDACIÓN AL CORTE: ${formatMoneda(resultados.totales.totalAPagar)}.`,
+        desglose: resultados.totales
+      };
+
+      await guardarLiquidacionBd(casoId, 'Liquidación de Crédito (Intereses)', payloadGuardado);
+      router.push(`/dashboard/casos/${casoId}`);
+    } catch (error) {
+      alert("Error al guardar en el expediente: " + error.message);
+      setIsSaving(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#F8FAFC] p-4 md:p-8 font-sans">
       <div className="max-w-6xl mx-auto space-y-6">
         
         <div>
-          <Link href="/dashboard" className="inline-flex items-center text-sm font-semibold text-[#1E3A8A] hover:text-blue-700 transition gap-1.5">
-            &larr; Volver al Despacho
+          <Link href={casoId ? `/dashboard/casos/${casoId}` : "/dashboard"} className="inline-flex items-center text-sm font-semibold text-[#1E3A8A] hover:text-blue-700 transition gap-1.5">
+            &larr; {casoId ? "Volver al Expediente" : "Volver al Despacho"}
           </Link>
         </div>
 
@@ -483,7 +509,6 @@ export default function InteresesApp() {
                   </div>
                 </div>
 
-                {/* ZONA DE PEGADO DE EXCEL */}
                 <div className="bg-blue-50/50 border border-blue-100 rounded-xl p-4">
                   <label className="block text-xs font-bold text-[#1E3A8A] mb-1">⚡ Pegado Masivo desde Excel</label>
                   <p className="text-[10px] text-gray-500 mb-2">Copia en tu Excel dos columnas sin encabezados (1. Fecha DD/MM/AAAA | 2. Monto) y haz Ctrl+V adentro del recuadro.</p>
@@ -620,6 +645,21 @@ export default function InteresesApp() {
                   </div>
                 </div>
 
+                {/* === NUEVO BOTÓN GIGANTE DE GUARDADO EN EXPEDIENTE === */}
+                {casoId && (
+                  <div className="mt-8 pt-6 border-t border-gray-200">
+                    <button 
+                      onClick={guardarEnExpediente} 
+                      disabled={isSaving}
+                      className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-lg py-5 px-6 rounded-xl shadow-xl transition-all flex items-center justify-center gap-3 disabled:opacity-50"
+                    >
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" /></svg>
+                      {isSaving ? 'Guardando permanentemente...' : 'GUARDAR RESULTADOS EN EL EXPEDIENTE'}
+                    </button>
+                    <p className="text-center text-sm text-gray-500 mt-2">Esta liquidación quedará vinculada permanentemente a este radicado judicial.</p>
+                  </div>
+                )}
+
               </div>
             )}
 
@@ -628,5 +668,13 @@ export default function InteresesApp() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function InteresesPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-[#1E3A8A] font-bold">Cargando herramienta...</div>}>
+      <InteresesAppContent />
+    </Suspense>
   );
 }
