@@ -37,7 +37,6 @@ export default async function Dashboard() {
         <div className="p-8">
           <h2 className="text-2xl font-bold text-gray-900 mb-6">Herramientas Activas</h2>
           
-          {/* Aumentamos las columnas en pantallas grandes a 3 (md:grid-cols-2 lg:grid-cols-3) */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             
             {/* App 1: Indexación */}
@@ -46,9 +45,9 @@ export default async function Dashboard() {
                 <h3 className="text-xl font-bold text-[#1E3A8A] mb-2">Liquidador de Indexación</h3>
                 <p className="text-gray-600 mb-4 text-sm">Actualiza valores de capital aplicando la fórmula jurisprudencial y el IPC del DANE.</p>
               </div>
-              <a href="https://microapp-indexacion.vercel.app/" target="_blank" rel="noopener noreferrer" className="block w-full bg-[#1E3A8A] text-white text-center py-2 rounded-lg hover:bg-blue-800 font-medium mt-auto">
+              <Link href="/dashboard/indexacion" className="block w-full bg-[#1E3A8A] text-white text-center py-2 rounded-lg hover:bg-blue-800 font-medium mt-auto">
                 Abrir Herramienta
-              </a>
+              </Link>
             </div>
 
             {/* App 2: Laboral */}
@@ -57,9 +56,9 @@ export default async function Dashboard() {
                 <h3 className="text-xl font-bold text-[#1E3A8A] mb-2">Liquidador Laboral</h3>
                 <p className="text-gray-600 mb-4 text-sm">Proyecta prestaciones sociales e indemnizaciones por despido al instante.</p>
               </div>
-              <a href="https://liquidador-laboral-mvp.vercel.app/" target="_blank" rel="noopener noreferrer" className="block w-full border-2 border-[#1E3A8A] text-[#1E3A8A] text-center py-2 rounded-lg hover:bg-blue-50 font-medium mt-auto">
+              <Link href="/dashboard/laboral" className="block w-full border-2 border-[#1E3A8A] text-[#1E3A8A] text-center py-2 rounded-lg hover:bg-blue-50 font-medium mt-auto">
                 Abrir Herramienta
-              </a>
+              </Link>
             </div>
 
             {/* App 3: Intereses (LA NUEVA MICROAPP) */}
@@ -68,7 +67,6 @@ export default async function Dashboard() {
                 <h3 className="text-xl font-bold text-[#1E3A8A] mb-2">Liquidador de Intereses</h3>
                 <p className="text-gray-600 mb-4 text-sm">Calcula intereses corrientes y moratorios (Ley Emiliani) con conexión en vivo a la SFC.</p>
               </div>
-              {/* Aquí usamos Link porque la app vive dentro del mismo proyecto de Next.js */}
               <Link href="/dashboard/intereses" className="block w-full bg-[#1E3A8A] text-white text-center py-2 rounded-lg hover:bg-blue-800 font-medium mt-auto">
                 Abrir Herramienta
               </Link>
