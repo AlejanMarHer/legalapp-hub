@@ -45,10 +45,11 @@ export default async function CasosPage() {
             <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Expedientes Activos</h1>
             <p className="text-gray-500 mt-2 font-medium">Gestiona y consulta el historial de tus procesos judiciales.</p>
           </div>
-          <button className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-bold shadow-md transition-all flex items-center gap-2">
+          {/* Botón Superior - Ahora es un Link */}
+          <Link href="/dashboard/casos/nuevo" className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-bold shadow-md transition-all flex items-center gap-2">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"/></svg>
             Nuevo Expediente
-          </button>
+          </Link>
         </div>
 
         {casos.length === 0 ? (
@@ -58,9 +59,10 @@ export default async function CasosPage() {
             </div>
             <h3 className="text-xl font-bold text-gray-800 mb-2">No tienes expedientes registrados</h3>
             <p className="text-gray-500 mb-8 max-w-md mx-auto">Comienza creando tu primer caso para centralizar radicados, partes procesales y guardar el historial de tus liquidaciones.</p>
-            <button className="bg-[#1E3A8A] text-white px-8 py-4 rounded-xl font-bold hover:bg-blue-800 shadow-lg transition-all">
+            {/* Botón Central - Ahora es un Link */}
+            <Link href="/dashboard/casos/nuevo" className="inline-block bg-[#1E3A8A] text-white px-8 py-4 rounded-xl font-bold hover:bg-blue-800 shadow-lg transition-all">
               Crear mi primer caso
-            </button>
+            </Link>
           </div>
         ) : (
           <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
