@@ -10,7 +10,6 @@ function IndexacionApp() {
   const router = useRouter();
   const casoId = searchParams.get('casoId');
 
-  // Estados de la aplicación
   const [ipcData, setIpcData] = useState({});
   const [filas, setFilas] = useState([{ id: Date.now(), capital: '', fechaInicial: '' }]);
   const [fechaFinal, setFechaFinal] = useState('');
@@ -20,7 +19,6 @@ function IndexacionApp() {
   const [errorMsg, setErrorMsg] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
 
-  // Cargar índices DANE
   useEffect(() => {
     fetch('https://microapp-indexacion.vercel.app/ipc_data.json')
       .then(res => res.json())
@@ -30,7 +28,6 @@ function IndexacionApp() {
 
   const formatoCOP = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 2 });
 
-  // Gestión de filas
   const agregarFila = () => setFilas([...filas, { id: Date.now(), capital: '', fechaInicial: '' }]);
   const eliminarFila = (id) => {
     if (filas.length > 1) {
@@ -44,7 +41,6 @@ function IndexacionApp() {
     setFilas(filas.map(f => f.id === id ? { ...f, [campo]: valor } : f));
   };
 
-  // Motor de cálculo matemático
   const ejecutarLiquidacion = (e) => {
     e.preventDefault();
     setErrorMsg(null);
@@ -113,7 +109,6 @@ function IndexacionApp() {
     });
   };
 
-  // Función para guardar en Supabase
   const guardarEnExpediente = async () => {
     if (!casoId || !resultado) return;
     setIsSaving(true);
@@ -133,7 +128,6 @@ function IndexacionApp() {
 
   return (
     <div className="bg-blue-50/50 min-h-screen text-gray-800 antialiased p-4 md:p-8">
-      {/* Botón de retorno dinámico */}
       <div className="max-w-5xl mx-auto mb-4 print:hidden">
         <Link href={casoId ? `/dashboard/casos/${casoId}` : "/dashboard"} className="inline-flex items-center text-sm font-bold text-[#1E3A8A] hover:text-blue-700 bg-white border border-blue-200 px-4 py-2 rounded-xl shadow-sm transition-all">
           &larr; {casoId ? "Volver al Expediente" : "Volver al Despacho"}
@@ -141,7 +135,6 @@ function IndexacionApp() {
       </div>
 
       <div className="max-w-5xl mx-auto bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
-        
         <div className="bg-gradient-to-r from-blue-900 to-slate-800 text-white p-8 print:hidden">
           <div className="flex items-center gap-3">
             <div className="bg-white/20 p-3 rounded-lg backdrop-blur-sm">
@@ -237,7 +230,7 @@ function IndexacionApp() {
                 <div className="bg-slate-50 border-l-4 border-slate-400 p-5 rounded-r-xl text-sm text-slate-700 font-mono leading-relaxed">{resultado.textoMemorial}</div>
               </div>
 
-              {/* === NUEVO: BOTÓN DE GUARDAR EN BASE DE DATOS === */}
+              {/* === BOTÓN GIGANTE DE GUARDAR EN BASE DE DATOS === */}
               {casoId && (
                 <div className="mt-8 pt-6 border-t border-gray-200 print:hidden">
                   <button 
@@ -261,6 +254,62 @@ function IndexacionApp() {
                 </button>
               </div>
 
+              {/* === MATRIZ RESUMEN RESTAURADA === */}
+              <div className="mt-10 pt-2 print:hidden">
+                <h3 className="text-lg font-bold text-slate-800 mb-4">Matriz Resumen de Consolidación Multicapital</h3>
+                <div className="rounded-xl border border-gray-200 overflow-x-auto">
+                  <table className="w-full text-sm text-left text-gray-600 whitespace-nowrap">
+                    <thead className="text-xs text-slate-700 uppercase bg-slate-100 font-bold border-b border-gray-200">
+                      <tr>
+                        <th className="px-4 py-3">No.</th>
+                        <th className="px-4 py-3">Causación</th>
+                        <th className="px-4 py-3 text-right">Cap. Base</th>
+                        <th className="px-4 py-3 text-center">Factor</th>
+                        <th className="px-4 py-3 text-right">Indexado</th>
+                        {resultado.conIntereses && (
+                          <>
+                            <th className="px-4 py-3 text-center">Mora</th>
+                            <th className="px-4 py-3 text-right">Interés</th>
+                          </>
+                        )}
+                        <th className="px-4 py-3 text-right">Total Pagar</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100 bg-white">
+                      {resultado.memoriaCalculos.map((c) => (
+                        <tr key={c.numero} className="hover:bg-slate-50">
+                          <td className="px-4 py-3 font-bold text-slate-500">{c.numero}</td>
+                          <td className="px-4 py-3 text-slate-700">{c.fecha}</td>
+                          <td className="px-4 py-3 text-right">{formatoCOP.format(c.capital)}</td>
+                          <td className="px-4 py-3 text-center font-mono text-xs">{c.factor.toFixed(5)}</td>
+                          <td className="px-4 py-3 text-right font-medium">{formatoCOP.format(c.indexado)}</td>
+                          {resultado.conIntereses && (
+                            <>
+                              <td className="px-4 py-3 text-center">{c.mesesMora}</td>
+                              <td className="px-4 py-3 text-right text-indigo-600">{formatoCOP.format(c.interes)}</td>
+                            </>
+                          )}
+                          <td className="px-4 py-3 text-right text-emerald-700 font-bold">{formatoCOP.format(c.total)}</td>
+                        </tr>
+                      ))}
+                      <tr className="bg-slate-100 border-t-2 border-slate-300">
+                        <td colSpan="2" className="px-4 py-4 text-right font-black text-slate-800 text-xs">TOTALES:</td>
+                        <td className="px-4 py-4 text-right font-black text-slate-800">{formatoCOP.format(resultado.totalHistorico)}</td>
+                        <td className="px-4 py-4"></td>
+                        <td className="px-4 py-4 text-right font-black text-slate-800">{formatoCOP.format(resultado.totalIndexado)}</td>
+                        {resultado.conIntereses && (
+                          <>
+                            <td className="px-4 py-4"></td>
+                            <td className="px-4 py-4 text-right font-black text-indigo-700">{formatoCOP.format(resultado.totalIntereses)}</td>
+                          </>
+                        )}
+                        <td className="px-4 py-4 text-right font-black text-emerald-800 text-lg">{formatoCOP.format(resultado.granTotalFinal)}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
             </div> 
           </div>
         )}
@@ -269,7 +318,6 @@ function IndexacionApp() {
   );
 }
 
-// Envoltorio de Suspense obligatorio en Next.js 13+ para leer parámetros de URL
 export default function IndexacionPage() {
   return (
     <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-[#1E3A8A] font-bold">Cargando herramienta...</div>}>
