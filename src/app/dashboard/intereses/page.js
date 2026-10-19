@@ -124,14 +124,12 @@ function InteresesAppContent() {
           const yyyy = fecha.getFullYear();
           const mm = String(fecha.getMonth() + 1).padStart(2, "0");
           
-          // La API normalmente devuelve el Interés Bancario Corriente (IBC).
-          // Para obtener la Tasa de Usura, multiplicamos por 1.5.
-          let ibc = parseFloat(campoValor);
-          let usura = ibc * 1.5;
+          // La API ya entrega el valor correcto de usura o tasa base según corresponda
+          const tasaValor = parseFloat(campoValor);
 
           return {
             mes: `${yyyy}-${mm}`,
-            tasaEA: usura 
+            tasaEA: tasaValor 
           };
         }).filter(Boolean);
 
@@ -145,7 +143,7 @@ function InteresesAppContent() {
           throw new Error("No se pudieron parsear los datos de la SFC");
         }
       } catch (error) {
-        console.warn("LitisApp: Error al conectar con SFC. Fallback local activo.", error);
+        console.warn("LitisApp: Usando tasas de respaldo locales seguras.", error);
         setTasasHistoricas(mockTasasHistorial);
         setEstadoAPI("error");
       }
