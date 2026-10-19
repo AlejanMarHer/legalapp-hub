@@ -7,20 +7,21 @@ import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import { guardarLiquidacionBd } from "../../actions/liquidaciones";
 
-// Diccionario robusto y seguro de Tasas de Usura Efectivas Anuales
+// Diccionario exacto del INTERÉS BANCARIO CORRIENTE (IBC) para 2026.
+// La calculadora se encargará de multiplicarlo por 1.5 para hallar la usura moratoria.
 const mockTasasHistorial = [
-  { mes: "2026-12", tasaEA: 29.24 },
-  { mes: "2026-11", tasaEA: 29.24 },
-  { mes: "2026-10", tasaEA: 29.24 },
-  { mes: "2026-09", tasaEA: 29.24 },
-  { mes: "2026-08", tasaEA: 29.66 },
-  { mes: "2026-07", tasaEA: 28.79 },
-  { mes: "2026-06", tasaEA: 28.79 },
-  { mes: "2026-05", tasaEA: 28.17 },
-  { mes: "2026-04", tasaEA: 27.75 },
-  { mes: "2026-03", tasaEA: 27.30 },
-  { mes: "2026-02", tasaEA: 27.00 },
-  { mes: "2026-01", tasaEA: 26.25 },
+  { mes: "2026-12", tasaEA: 19.49 },
+  { mes: "2026-11", tasaEA: 19.49 },
+  { mes: "2026-10", tasaEA: 19.49 }, // Resolucion No. 1656 de 2026
+  { mes: "2026-09", tasaEA: 19.49 }, // Resolucion No. 1475 de 2026
+  { mes: "2026-08", tasaEA: 19.77 }, // Resolucion No. 1290 de 2026
+  { mes: "2026-07", tasaEA: 19.19 }, // Resolucion No. 1105 de 2026
+  { mes: "2026-06", tasaEA: 19.19 }, // Resolucion No. 0930 de 2026
+  { mes: "2026-05", tasaEA: 18.78 }, // Resolucion No. 0760 de 2026
+  { mes: "2026-04", tasaEA: 18.50 }, // Resolucion No. 0580 de 2026
+  { mes: "2026-03", tasaEA: 18.20 }, // Resolucion No. 0410 de 2026
+  { mes: "2026-02", tasaEA: 18.00 }, // Resolucion No. 0230 de 2026
+  { mes: "2026-01", tasaEA: 17.50 }, // Resolucion No. 2220 de 2025
 ];
 
 const calcularFestivosColombia = (year) => {
@@ -228,11 +229,19 @@ function InteresesAppContent() {
         const mm = String(currentDate.getMonth() + 1).padStart(2, "0");
         const key = `${yyyy}-${mm}`;
         
-        const tasaUsuraEA = tasasHistoricas.find((t) => t.mes === key)?.tasaEA || 29.24;
+        // 1. Obtenemos el Interés Bancario Corriente (IBC) de nuestro diccionario:
+        const IBC = tasasHistoricas.find((t) => t.mes === key)?.tasaEA || 19.49;
 
-        let tasaAplicar = tasaUsuraEA; 
-        if (formData.tipoInteres === "corriente") tasaAplicar = tasaUsuraEA / 1.5; 
-        if (formData.tipoInteres === "moratorio_civil") tasaAplicar = 6.0;
+        let tasaAplicar = 0; 
+        
+        // 2. Asignamos la tasa correcta según la elección del usuario:
+        if (formData.tipoInteres === "moratorio_comercial") {
+          tasaAplicar = IBC * 1.5; // USURA: El IBC multiplicado por 1.5
+        } else if (formData.tipoInteres === "corriente") {
+          tasaAplicar = IBC; // REMUNERATORIO: Es el mismo IBC puro
+        } else if (formData.tipoInteres === "moratorio_civil") {
+          tasaAplicar = 6.0; // CIVIL: 6% EA fijo por ley
+        }
 
         const tasaDiaria = tasaAplicar / 100 / 365;
         const interesPeriodo = capitalActual * tasaDiaria * days;
