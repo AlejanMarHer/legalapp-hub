@@ -9,19 +9,56 @@ datasource db {
 }
 
 model Caso {
-  id            String         @id @default(cuid())
-  userId        String         // ID del abogado (Clerk)
-  radicado      String?
-  demandante    String
-  demandado     String
-  juzgado       String?
-  estado        String         @default("Activo")
+  id                  String   @id @default(uuid())
+  userId              String   // ID de Clerk del abogado
   
-  // Esta línea crea la conexión: Un caso tiene muchas liquidaciones
-  liquidaciones Liquidacion[]  
+  // 1. Identificación del Proceso
+  radicado            String?
+  juzgado             String?
+  ciudad              String?  @default("Bogotá D.C.")
+  areaDerecho         String?  @default("Civil") // Civil, Laboral, Familia, etc.
+  claseProceso        String?  // Ejecutivo Singular, Ordinario, etc.
+  estadoInterno       String?  @default("Activo") // Activo, Archivado, Terminado
   
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
+  // 2. Partes Procesales
+  demandante          String
+  idDemandante        String?  // C.C. o NIT
+  demandado           String
+  idDemandado         String?  // C.C. o NIT
+  calidadProcesal     String?  @default("Apoderado Demandante") // A quién representamos
+  
+  // 3. Datos Financieros
+  cuantia             Float?   @default(0)
+  capitalBase         Float?   @default(0)
+  honorariosPactados  String?  // Texto libre: "20% Cuota Litis", "$5.000.000 fijos"
+  saldoHonorarios     Float?   @default(0)
+  
+  // 4. Contacto del Cliente
+  telCliente          String?
+  emailCliente        String?
+  dirCliente          String?
+  notasContacto       String?  // "Solo llamar en las tardes"
+  
+  // 5. Contraparte
+  abogadoContraparte  String?
+  emailContraparte    String?
+  telContraparte      String?
+  
+  // 6. Hitos y Plazos
+  fechaPresentacion   DateTime?
+  fechaAdmision       DateTime?
+  fechaVencimiento    DateTime? // Próximo término a vencer
+  descVencimiento     String?   // "Contestar excepciones"
+  
+  // 7. Observaciones
+  resumenHechos       String?   @db.Text
+  apuntesPrivados     String?   @db.Text
+  
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  // Relación con el historial de cálculos
+  liquidaciones       Liquidacion[]
 }
 
 model Liquidacion {
