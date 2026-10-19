@@ -5,6 +5,8 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import GeneradorWord from './GeneradorWord';
 
+export const dynamic = 'force-dynamic';
+
 const prisma = global.prisma || new PrismaClient();
 if (process.env.NODE_ENV !== 'production') global.prisma = prisma;
 
@@ -12,8 +14,11 @@ export default async function GeneradorPoderPage({ params }) {
   const user = await currentUser();
   if (!user) redirect('/');
 
+  // CORRECCIÓN: Await obligatorio para extraer el ID en Next.js 15+
+  const resolvedParams = await params;
+  const casoId = resolvedParams.id;
+
   // Obtenemos los datos del expediente actual desde Prisma
-  const casoId = params.id;
   const caso = await prisma.caso.findUnique({
     where: { id: casoId }
   });
