@@ -4,6 +4,9 @@ import { redirect } from 'next/navigation';
 import { PrismaClient } from '@prisma/client';
 import Link from 'next/link';
 
+// Evita que Vercel guarde en caché una versión rota de la página
+export const dynamic = 'force-dynamic';
+
 const prisma = global.prisma || new PrismaClient();
 if (process.env.NODE_ENV !== 'production') global.prisma = prisma;
 
@@ -11,7 +14,9 @@ export default async function ExpedienteDetallePage({ params }) {
   const user = await currentUser();
   if (!user) redirect('/');
 
-  const casoId = params.id;
+  // LA CORRECCIÓN: En Next.js 15+ los params deben resolverse con "await"
+  const resolvedParams = await params;
+  const casoId = resolvedParams.id;
   
   // Buscamos el caso y su historial de liquidaciones
   const caso = await prisma.caso.findUnique({
@@ -50,7 +55,6 @@ export default async function ExpedienteDetallePage({ params }) {
             </p>
           </div>
 
-          {/* === AQUI ESTÁN LOS BOTONES DE ACCIÓN (EL DEL PODER Y EL DE INTERESES) === */}
           <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto shrink-0">
             <Link 
               href={`/dashboard/casos/${caso.id}/poder`}
