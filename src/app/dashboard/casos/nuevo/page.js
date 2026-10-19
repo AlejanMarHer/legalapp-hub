@@ -1,95 +1,265 @@
-import React from 'react';
-import { redirect } from 'next/navigation';
-import { currentUser } from '@clerk/nextjs/server';
-import { PrismaClient } from '@prisma/client';
+"use client";
+
+import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { guardarNuevoExpediente } from '../../../actions/expedientes';
 
-// Puente de Base de Datos
-const prisma = global.prisma || new PrismaClient();
-if (process.env.NODE_ENV !== 'production') global.prisma = prisma;
+export default function NuevoExpedientePage() {
+  const router = useRouter();
+  const [isSaving, setIsSaving] = useState(false);
+  
+  // Estado inicial con todos los campos de nuestro nuevo esquema
+  const [formData, setFormData] = useState({
+    radicado: '', juzgado: '', ciudad: 'Bogotá D.C.', areaDerecho: 'Civil', claseProceso: '', estadoInterno: 'Activo',
+    demandante: '', idDemandante: '', demandado: '', idDemandado: '', calidadProcesal: 'Apoderado Demandante',
+    cuantia: '', capitalBase: '', honorariosPactados: '', saldoHonorarios: '',
+    telCliente: '', emailCliente: '', dirCliente: '', notasContacto: '',
+    abogadoContraparte: '', emailContraparte: '', telContraparte: '',
+    fechaPresentacion: '', fechaAdmision: '', fechaVencimiento: '', descVencimiento: '',
+    resumenHechos: '', apuntesPrivados: ''
+  });
 
-export default async function NuevoCasoPage() {
-  const user = await currentUser();
-  if (!user) redirect('/');
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
 
-  // ESTA ES LA MAGIA: Función que se ejecuta en el servidor al enviar el formulario
-  async function guardarCaso(formData) {
-    'use server';
-    
-    const radicado = formData.get('radicado');
-    const demandante = formData.get('demandante');
-    const demandado = formData.get('demandado');
-    const juzgado = formData.get('juzgado');
-
-    // Insertar en la base de datos Supabase
-    await prisma.caso.create({
-      data: {
-        userId: user.id,
-        radicado,
-        demandante,
-        demandado,
-        juzgado,
-        estado: 'Activo'
-      }
-    });
-
-    // Redirigir de vuelta a la tabla de casos
-    redirect('/dashboard/casos');
-  }
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsSaving(true);
+    try {
+      const casoId = await guardarNuevoExpediente(formData);
+      router.push(`/dashboard/casos/${casoId}`);
+    } catch (error) {
+      alert("Error al guardar el expediente: " + error.message);
+      setIsSaving(false);
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
-      <main className="flex-1 p-8 max-w-4xl mx-auto">
-        <div className="mb-8">
-          <Link href="/dashboard/casos" className="text-blue-600 hover:text-blue-800 font-medium flex items-center gap-2 mb-4">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
-            Volver a mis expedientes
-          </Link>
-          <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Radicar Nuevo Expediente</h1>
-          <p className="text-gray-500 mt-2 font-medium">Ingresa los datos procesales para crear un nuevo registro en tu despacho virtual.</p>
+    <div className="min-h-screen bg-gray-50/50 p-4 md:p-8 font-sans">
+      <div className="max-w-4xl mx-auto space-y-6">
+        
+        <Link href="/dashboard/casos" className="text-blue-600 flex items-center gap-2 hover:underline font-medium text-sm w-fit">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+          Volver a mis expedientes
+        </Link>
+
+        <div>
+          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Radicar Nuevo Expediente</h1>
+          <p className="text-slate-500 mt-1 text-sm">Ingresa los datos procesales para crear un nuevo registro completo en tu despacho virtual.</p>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
-          <form action={guardarCaso} className="space-y-6">
-            
-            {/* Campo: Radicado */}
-            <div>
-              <label htmlFor="radicado" className="block text-sm font-bold text-gray-700 mb-2">Número de Radicado (21 dígitos)</label>
-              <input type="text" id="radicado" name="radicado" placeholder="Ej. 11001400301720230012300" 
-                className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition shadow-sm" />
-            </div>
-
-            {/* Fila: Demandante y Demandado */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label htmlFor="demandante" className="block text-sm font-bold text-gray-700 mb-2">Parte Demandante <span className="text-red-500">*</span></label>
-                <input type="text" id="demandante" name="demandante" required placeholder="Nombre completo o razón social" 
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition shadow-sm" />
+        <form onSubmit={handleSubmit} className="space-y-6 pb-20">
+          
+          {/* SECCIÓN 1: Identificación */}
+          <div className="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h2 className="text-lg font-bold text-slate-800 border-b border-slate-100 pb-3 mb-5 flex items-center gap-2">
+              <span className="bg-blue-100 text-blue-700 w-6 h-6 rounded-full flex items-center justify-center text-xs">1</span> 
+              Identificación del Proceso
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div className="md:col-span-2">
+                <label className="block text-xs font-bold text-slate-600 mb-1">Número de Radicado (21 dígitos)</label>
+                <input type="text" name="radicado" value={formData.radicado} onChange={handleChange} className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition-all" placeholder="Ej. 11001400301720240012300" />
+              </div>
+              <div className="md:col-span-2">
+                <label className="block text-xs font-bold text-slate-600 mb-1">Despacho Judicial</label>
+                <input type="text" name="juzgado" value={formData.juzgado} onChange={handleChange} className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition-all" placeholder="Ej. Juzgado 17 Civil del Circuito de Bogotá" />
               </div>
               <div>
-                <label htmlFor="demandado" className="block text-sm font-bold text-gray-700 mb-2">Parte Demandada <span className="text-red-500">*</span></label>
-                <input type="text" id="demandado" name="demandado" required placeholder="Nombre completo o razón social" 
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition shadow-sm" />
+                <label className="block text-xs font-bold text-slate-600 mb-1">Ciudad / Municipio</label>
+                <input type="text" name="ciudad" value={formData.ciudad} onChange={handleChange} className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition-all" placeholder="Ej. Bogotá D.C." />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-600 mb-1">Área del Derecho</label>
+                <select name="areaDerecho" value={formData.areaDerecho} onChange={handleChange} className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition-all bg-white cursor-pointer">
+                  <option value="Civil">Civil</option>
+                  <option value="Laboral">Laboral</option>
+                  <option value="Familia">Familia</option>
+                  <option value="Administrativo">Administrativo</option>
+                  <option value="Penal">Penal</option>
+                  <option value="Disciplinario">Disciplinario</option>
+                  <option value="Otro">Otro</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-600 mb-1">Clase de Proceso</label>
+                <input type="text" name="claseProceso" value={formData.claseProceso} onChange={handleChange} className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition-all" placeholder="Ej. Ejecutivo Singular, Ordinario..." />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-600 mb-1">Estado Interno</label>
+                <select name="estadoInterno" value={formData.estadoInterno} onChange={handleChange} className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition-all bg-white cursor-pointer">
+                  <option value="Activo">Activo</option>
+                  <option value="Suspendido">Suspendido</option>
+                  <option value="En Apelación">En Apelación</option>
+                  <option value="Terminado">Terminado</option>
+                  <option value="Archivado">Archivado</option>
+                </select>
               </div>
             </div>
+          </div>
 
-            {/* Campo: Juzgado */}
-            <div>
-              <label htmlFor="juzgado" className="block text-sm font-bold text-gray-700 mb-2">Despacho Judicial</label>
-              <input type="text" id="juzgado" name="juzgado" placeholder="Ej. Juzgado 17 Civil del Circuito de Bogotá" 
-                className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition shadow-sm" />
+          {/* SECCIÓN 2: Partes Procesales */}
+          <div className="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h2 className="text-lg font-bold text-slate-800 border-b border-slate-100 pb-3 mb-5 flex items-center gap-2">
+              <span className="bg-blue-100 text-blue-700 w-6 h-6 rounded-full flex items-center justify-center text-xs">2</span> 
+              Partes Procesales
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div>
+                <label className="block text-xs font-bold text-slate-600 mb-1">Demandante / Accionante <span className="text-red-500">*</span></label>
+                <input type="text" name="demandante" value={formData.demandante} onChange={handleChange} required className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition-all bg-blue-50/30" placeholder="Nombre completo o Razón Social" />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-600 mb-1">Identificación Demandante</label>
+                <input type="text" name="idDemandante" value={formData.idDemandante} onChange={handleChange} className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition-all" placeholder="C.C. o NIT" />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-600 mb-1">Demandado / Accionado <span className="text-red-500">*</span></label>
+                <input type="text" name="demandado" value={formData.demandado} onChange={handleChange} required className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition-all bg-red-50/30" placeholder="Nombre completo o Razón Social" />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-600 mb-1">Identificación Demandado</label>
+                <input type="text" name="idDemandado" value={formData.idDemandado} onChange={handleChange} className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition-all" placeholder="C.C. o NIT" />
+              </div>
+              <div className="md:col-span-2">
+                <label className="block text-xs font-bold text-slate-600 mb-1">Nuestra Calidad Procesal</label>
+                <select name="calidadProcesal" value={formData.calidadProcesal} onChange={handleChange} className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition-all bg-white cursor-pointer">
+                  <option value="Apoderado Demandante">Apoderado Demandante</option>
+                  <option value="Apoderado Demandada">Apoderado Parte Demandada</option>
+                  <option value="Llamado en Garantía">Llamado en Garantía</option>
+                  <option value="Litisconsorte">Litisconsorte</option>
+                  <option value="Otro">Otro</option>
+                </select>
+              </div>
             </div>
+          </div>
 
-            {/* Botón Guardar */}
-            <div className="pt-6 border-t border-gray-100 flex justify-end">
-              <button type="submit" className="bg-[#1E3A8A] text-white px-8 py-3 rounded-xl font-bold hover:bg-blue-800 shadow-md transition-all">
-                Guardar Expediente
-              </button>
+          {/* SECCIÓN 3: Financieros */}
+          <div className="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h2 className="text-lg font-bold text-slate-800 border-b border-slate-100 pb-3 mb-5 flex items-center gap-2">
+              <span className="bg-blue-100 text-blue-700 w-6 h-6 rounded-full flex items-center justify-center text-xs">3</span> 
+              Datos Financieros y Honorarios
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div>
+                <label className="block text-xs font-bold text-slate-600 mb-1">Cuantía Estimada (COP)</label>
+                <input type="number" name="cuantia" value={formData.cuantia} onChange={handleChange} className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition-all" placeholder="Ej. 50000000" />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-600 mb-1">Capital Base / Suerte Principal (COP)</label>
+                <input type="number" name="capitalBase" value={formData.capitalBase} onChange={handleChange} className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition-all" placeholder="Ej. 45000000" />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-600 mb-1">Honorarios Pactados</label>
+                <input type="text" name="honorariosPactados" value={formData.honorariosPactados} onChange={handleChange} className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition-all" placeholder="Ej. 20% Cuota Litis o $5.000.000" />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-600 mb-1">Saldo de Honorarios Pendiente (COP)</label>
+                <input type="number" name="saldoHonorarios" value={formData.saldoHonorarios} onChange={handleChange} className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition-all" placeholder="Ej. 2500000" />
+              </div>
             </div>
+          </div>
 
-          </form>
-        </div>
-      </main>
+          {/* SECCIÓN 4: Contactos */}
+          <div className="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h2 className="text-lg font-bold text-slate-800 border-b border-slate-100 pb-3 mb-5 flex items-center gap-2">
+              <span className="bg-blue-100 text-blue-700 w-6 h-6 rounded-full flex items-center justify-center text-xs">4</span> 
+              Directorio de Contactos
+            </h2>
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-sm font-bold text-slate-700 mb-3">Datos de Nuestro Cliente</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-600 mb-1">Teléfono / WhatsApp</label>
+                    <input type="text" name="telCliente" value={formData.telCliente} onChange={handleChange} className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition-all" placeholder="Ej. 300 123 4567" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-600 mb-1">Correo Electrónico</label>
+                    <input type="email" name="emailCliente" value={formData.emailCliente} onChange={handleChange} className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition-all" placeholder="cliente@correo.com" />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-xs font-bold text-slate-600 mb-1">Dirección Física</label>
+                    <input type="text" name="dirCliente" value={formData.dirCliente} onChange={handleChange} className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition-all" placeholder="Dirección completa" />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-xs font-bold text-slate-600 mb-1">Notas de Contacto</label>
+                    <input type="text" name="notasContacto" value={formData.notasContacto} onChange={handleChange} className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition-all" placeholder="Ej. Llamar solo en las mañanas..." />
+                  </div>
+                </div>
+              </div>
+              <div className="pt-4 border-t border-slate-100">
+                <h3 className="text-sm font-bold text-slate-700 mb-3">Inteligencia Procesal (Contraparte)</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  <div className="md:col-span-2">
+                    <label className="block text-xs font-bold text-slate-600 mb-1">Abogado Titular Contraparte</label>
+                    <input type="text" name="abogadoContraparte" value={formData.abogadoContraparte} onChange={handleChange} className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition-all" placeholder="Nombre del apoderado" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-600 mb-1">Correo de Notificación Judicial</label>
+                    <input type="email" name="emailContraparte" value={formData.emailContraparte} onChange={handleChange} className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition-all" placeholder="abogado@correo.com" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-600 mb-1">Teléfono Contraparte</label>
+                    <input type="text" name="telContraparte" value={formData.telContraparte} onChange={handleChange} className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition-all" placeholder="Para explorar conciliaciones" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* SECCIÓN 5: Hitos */}
+          <div className="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h2 className="text-lg font-bold text-slate-800 border-b border-slate-100 pb-3 mb-5 flex items-center gap-2">
+              <span className="bg-blue-100 text-blue-700 w-6 h-6 rounded-full flex items-center justify-center text-xs">5</span> 
+              Hitos, Plazos y Observaciones
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div>
+                <label className="block text-xs font-bold text-slate-600 mb-1">Fecha Presentación Demanda</label>
+                <input type="date" name="fechaPresentacion" value={formData.fechaPresentacion} onChange={handleChange} className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition-all bg-white cursor-pointer" />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-600 mb-1">Fecha Auto Admisorio / Mandamiento</label>
+                <input type="date" name="fechaAdmision" value={formData.fechaAdmision} onChange={handleChange} className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition-all bg-white cursor-pointer" />
+              </div>
+              <div className="md:col-span-2 bg-orange-50/50 p-5 rounded-xl border border-orange-100 mt-2 grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
+                <div>
+                  <label className="block text-xs font-bold text-orange-800 mb-1">Próximo Vencimiento</label>
+                  <input type="date" name="fechaVencimiento" value={formData.fechaVencimiento} onChange={handleChange} className="w-full border border-orange-200 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-orange-500 outline-none bg-white text-orange-900 cursor-pointer" />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-xs font-bold text-orange-800 mb-1">Descripción del Vencimiento</label>
+                  <input type="text" name="descVencimiento" value={formData.descVencimiento} onChange={handleChange} className="w-full border border-orange-200 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-orange-500 outline-none bg-white text-orange-900" placeholder="Ej. Contestar excepciones de mérito" />
+                </div>
+              </div>
+              <div className="md:col-span-2 mt-2">
+                <label className="block text-xs font-bold text-slate-600 mb-1">Resumen de Hechos / Teoría del Caso</label>
+                <textarea name="resumenHechos" value={formData.resumenHechos} onChange={handleChange} rows="3" className="w-full border border-slate-300 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition-all resize-none" placeholder="Breve descripción fáctica del proceso..."></textarea>
+              </div>
+              <div className="md:col-span-2">
+                <label className="block text-xs font-bold text-slate-600 mb-1">Apuntes Privados y Estrategia</label>
+                <textarea name="apuntesPrivados" value={formData.apuntesPrivados} onChange={handleChange} rows="3" className="w-full border border-slate-300 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition-all resize-none bg-slate-50" placeholder="Notas internas exclusivas para el despacho..."></textarea>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex justify-end pt-4">
+            <button 
+              type="submit" 
+              disabled={isSaving} 
+              className="bg-[#1E3A8A] hover:bg-blue-800 text-white font-extrabold py-4 px-10 rounded-xl shadow-lg transition-all disabled:opacity-50 flex items-center gap-2"
+            >
+              {isSaving ? 'Guardando...' : 'GUARDAR EXPEDIENTE COMPLETO'}
+              {!isSaving && <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>}
+            </button>
+          </div>
+
+        </form>
+      </div>
     </div>
   );
 }
