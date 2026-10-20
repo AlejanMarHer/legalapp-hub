@@ -7,21 +7,26 @@ import 'jspdf-autotable';
 export default function BotonReporteCliente({ caso, nombreAbogado }) {
   const [generando, setGenerando] = useState(false);
 
-  const calidad = caso?.calidadProcesal || '';
+  // Sanitización de textos para evitar que jsPDF falle con nulos
+  const getSafeText = (value, defaultText = '') => {
+    if (value === null || value === undefined) return defaultText;
+    return String(value);
+  };
+
+  const calidad = getSafeText(caso?.calidadProcesal);
   const esDemandado = calidad.includes('Demandada');
   
-  const nombreCliente = esDemandado ? (caso?.demandado || 'Cliente') : (caso?.demandante || 'Cliente');
-  const nombreContraparte = esDemandado ? (caso?.demandante || 'Contraparte') : (caso?.demandado || 'Contraparte');
+  const nombreCliente = esDemandado ? getSafeText(caso?.demandado, 'Cliente') : getSafeText(caso?.demandante, 'Cliente');
+  const nombreContraparte = esDemandado ? getSafeText(caso?.demandante, 'Contraparte') : getSafeText(caso?.demandado, 'Contraparte');
 
   const generarPDF = () => {
     try {
       setGenerando(true);
       const doc = new jsPDF();
 
-      // 1. COLORES Y ESTILOS BASE
-      const primaryColor = [30, 58, 138]; // Azul LitisApp
+      const primaryColor = [30, 58, 138];
       
-      // 2. ENCABEZADO INSTITUCIONAL
+      // ENCABEZADO
       doc.setFillColor(...primaryColor);
       doc.rect(0, 0, 210, 40, 'F');
       
@@ -32,33 +37,31 @@ export default function BotonReporteCliente({ caso, nombreAbogado }) {
       
       doc.setFontSize(10);
       doc.setFont("helvetica", "normal");
-      doc.text(`Despacho Jurídico: ${nombreAbogado || 'Abogado'} - T.P. 310641`, 105, 32, { align: "center" });
+      doc.text(`Despacho Jurídico: ${getSafeText(nombreAbogado, 'Abogado')} - T.P. 310641`, 105, 32, { align: "center" });
 
-      // 3. SALUDO Y DATOS DEL PROCESO
+      // SALUDO
       doc.setTextColor(0, 0, 0);
       doc.setFontSize(11);
       doc.text(`Estimado(a) cliente ${nombreCliente.toUpperCase()},`, 14, 55);
       doc.text("A continuación, presentamos el informe de estado actual de su proceso judicial gestionado por nuestro despacho.", 14, 62, { maxWidth: 180 });
 
-      // Primera tabla (Datos del Proceso)
+      // TABLA 1
       doc.autoTable({
         startY: 70,
         theme: 'grid',
         headStyles: { fillColor: [241, 245, 249], textColor: [15, 23, 42], fontStyle: 'bold' },
         body: [
-          ['Radicado Judicial:', caso?.radicado || 'En trámite de asignación'],
-          ['Despacho:', caso?.juzgado || 'Pendiente'],
-          ['Nuestra Calidad:', caso?.calidadProcesal || 'Apoderado'],
+          ['Radicado Judicial:', getSafeText(caso?.radicado, 'En trámite de asignación')],
+          ['Despacho:', getSafeText(caso?.juzgado, 'Pendiente')],
+          ['Nuestra Calidad:', getSafeText(caso?.calidadProcesal, 'Apoderado')],
           ['Contraparte:', nombreContraparte],
-          ['Estado del Caso:', caso?.estadoInterno || 'Activo']
+          ['Estado del Caso:', getSafeText(caso?.estadoInterno, 'Activo')]
         ]
       });
 
-      // CORRECCIÓN CLAVE: Calculamos la altura de la primera tabla a mano asumiendo ~10px por fila + padding.
-      // 5 filas * 10 = 50 + startY(70) = ~120. Le damos un margen seguro de 135.
       let currentY = 135; 
 
-      // 4. RESUMEN DE GESTIONES
+      // RESUMEN
       doc.setFontSize(12);
       doc.setFont("helvetica", "bold");
       doc.setTextColor(...primaryColor);
@@ -75,8 +78,7 @@ export default function BotonReporteCliente({ caso, nombreAbogado }) {
       const splitResumen = doc.splitTextToSize(textoResumen, 180);
       doc.text(splitResumen, 14, currentY + 8);
 
-      // 5. AGENDA Y PRÓXIMOS PASOS
-      // Calculamos el espacio que ocupó el texto + margen para la siguiente tabla
+      // AGENDA
       currentY = currentY + 10 + (splitResumen.length * 5) + 10;
       doc.setFontSize(12);
       doc.setFont("helvetica", "bold");
@@ -85,7 +87,7 @@ export default function BotonReporteCliente({ caso, nombreAbogado }) {
 
       const formatFecha = (f) => f ? new Date(f).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' }) : 'No registrada';
 
-      // Segunda tabla (Fechas)
+      // TABLA 2
       doc.autoTable({
         startY: currentY + 5,
         theme: 'striped',
@@ -94,17 +96,17 @@ export default function BotonReporteCliente({ caso, nombreAbogado }) {
         body: [
           ['Presentación Demanda', formatFecha(caso?.fechaPresentacion), ''],
           ['Auto Admisorio', formatFecha(caso?.fechaAdmision), ''],
-          ['Próxima Actuación', formatFecha(caso?.fechaVencimiento), caso?.descVencimiento || 'Monitoreo constante en juzgado']
+          ['Próxima Actuación', formatFecha(caso?.fechaVencimiento), getSafeText(caso?.descVencimiento, 'Monitoreo constante en juzgado')]
         ]
       });
 
-      // 6. PIE DE PÁGINA
+      // PIE DE PÁGINA
       const pageHeight = doc.internal.pageSize.height;
       doc.setFontSize(8);
       doc.setTextColor(150, 150, 150);
       doc.text(`Documento generado confidencialmente por LitisApp el ${new Date().toLocaleDateString('es-CO')}.`, 105, pageHeight - 15, { align: "center" });
 
-      // 7. DESCARGA
+      // DESCARGA
       const safeName = nombreCliente.replace(/[^a-zA-Z0-9]/g, '_');
       doc.save(`Reporte_${safeName}_${new Date().toISOString().split('T')[0]}.pdf`);
       
