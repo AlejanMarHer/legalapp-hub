@@ -56,6 +56,13 @@ export default async function ExpedienteDetallePage({ params }) {
           </div>
 
           <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto shrink-0">
+            {/* BOTÓN DE EDITAR AÑADIDO AQUÍ */}
+            <Link 
+              href={`/dashboard/casos/${caso.id}/editar`}
+              className="bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 font-bold py-3.5 px-5 rounded-xl shadow-sm transition-all hover:-translate-y-0.5 flex items-center justify-center gap-2 text-sm"
+            >
+              ✏️ Editar Datos
+            </Link>
             <Link 
               href={`/dashboard/casos/${caso.id}/poder`}
               className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 px-5 rounded-xl shadow-md transition-all hover:-translate-y-0.5 flex items-center justify-center gap-2 text-sm"
