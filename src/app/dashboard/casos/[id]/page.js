@@ -4,7 +4,8 @@ import { redirect } from 'next/navigation';
 import { PrismaClient } from '@prisma/client';
 import Link from 'next/link';
 import BotonReporteCliente from './BotonReporteCliente';
-import BotonResolverVencimiento from './BotonResolverVencimiento'; // <-- NUEVO BOTÓN
+import BotonResolverVencimiento from './BotonResolverVencimiento';
+import BotonRegistrarPago from './BotonRegistrarPago';
 
 export const dynamic = 'force-dynamic';
 
@@ -112,7 +113,6 @@ export default async function ExpedienteDetallePage({ params }) {
                   <p className="text-sm text-slate-700 leading-relaxed bg-slate-50 p-4 rounded-xl border border-slate-100">{caso.resumenHechos || 'Aún no has registrado un resumen de los hechos para este proceso.'}</p>
                 </div>
                 <div>
-                  {/* AQUÍ ESTÁ EL CAMBIO PARA LA BITÁCORA */}
                   <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Bitácora de Gestiones y Apuntes</p>
                   <p className="text-sm text-slate-700 leading-relaxed bg-yellow-50 p-4 rounded-xl border border-yellow-100 whitespace-pre-wrap">
                     {caso.apuntesPrivados || 'No hay notas ni gestiones registradas.'}
@@ -170,6 +170,9 @@ export default async function ExpedienteDetallePage({ params }) {
                   <span className="font-black text-emerald-700">{formatCOP(caso.saldoHonorarios)}</span>
                 </li>
               </ul>
+              
+              {/* BOTÓN DE PAGOS AÑADIDO AQUÍ */}
+              <BotonRegistrarPago caso={caso} nombreAbogado={`${user.firstName} ${user.lastName}`} />
             </div>
 
             <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-200">
@@ -191,7 +194,6 @@ export default async function ExpedienteDetallePage({ params }) {
                   <p className="text-lg font-black text-orange-950 my-1">{formatFecha(caso.fechaVencimiento)}</p>
                   <p className="text-xs font-semibold text-orange-800 bg-orange-100/50 p-2 rounded-lg">{caso.descVencimiento || 'Sin descripción de la actuación'}</p>
                   
-                  {/* AQUÍ ESTÁ EL COMPONENTE FUNCIONANDO */}
                   {caso.fechaVencimiento && (
                     <BotonResolverVencimiento casoId={caso.id} descVencimiento={caso.descVencimiento} />
                   )}

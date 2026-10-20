@@ -59,6 +59,8 @@ model Caso {
 
   // Relación con el historial de cálculos
   liquidaciones       Liquidacion[]
+
+  abonos        Abono[]
 }
 
 model Liquidacion {
@@ -71,4 +73,14 @@ model Liquidacion {
   caso        Caso     @relation(fields: [casoId], references: [id], onDelete: Cascade)
 
   createdAt   DateTime @default(now())
+}
+
+model Abono {
+  id          String   @id @default(cuid())
+  monto       Float
+  concepto    String?
+  fecha       DateTime @default(now())
+  
+  casoId      String
+  caso        Caso     @relation(fields: [casoId], references: [id], onDelete: Cascade)
 }
