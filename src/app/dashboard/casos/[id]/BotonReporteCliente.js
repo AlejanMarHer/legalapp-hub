@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable'; // <-- CORRECCIÓN CLAVE: Importación directa
+import autoTable from 'jspdf-autotable'; 
 
 export default function BotonReporteCliente({ caso, nombreAbogado }) {
   const [generando, setGenerando] = useState(false);
@@ -19,13 +19,22 @@ export default function BotonReporteCliente({ caso, nombreAbogado }) {
   const nombreContraparte = esDemandado ? getSafeText(caso?.demandante, 'Contraparte') : getSafeText(caso?.demandado, 'Contraparte');
 
   const generarPDF = () => {
+    // 1. SOLUCIÓN MAGISTRAL: Pedimos la gestión exacta del día al vuelo
+    const gestionAlVuelo = window.prompt(
+      "¿Cuál fue la ÚLTIMA GESTIÓN REALIZADA?\n(Este texto aparecerá en el reporte para el cliente como la actualización de hoy)", 
+      "Se revisó el expediente y el proceso avanza conforme a los tiempos del despacho judicial."
+    );
+
+    // Si le das a "Cancelar" en la ventana emergente, abortamos la generación.
+    if (gestionAlVuelo === null) return; 
+
     try {
       setGenerando(true);
       const doc = new jsPDF();
 
       const primaryColor = [30, 58, 138]; // Azul LitisApp
       
-      // ENCABEZADO
+      // ENCABEZADO INSTITUCIONAL
       doc.setFillColor(...primaryColor);
       doc.rect(0, 0, 210, 40, 'F');
       
@@ -38,13 +47,13 @@ export default function BotonReporteCliente({ caso, nombreAbogado }) {
       doc.setFont("helvetica", "normal");
       doc.text(`Despacho Jurídico: ${getSafeText(nombreAbogado, 'Abogado')} - T.P. 310641`, 105, 32, { align: "center" });
 
-      // SALUDO
+      // SALUDO INICIAL
       doc.setTextColor(0, 0, 0);
       doc.setFontSize(11);
       doc.text(`Estimado(a) cliente ${nombreCliente.toUpperCase()},`, 14, 55);
       doc.text("A continuación, presentamos el informe de estado actual de su proceso judicial gestionado por nuestro despacho.", 14, 62, { maxWidth: 180 });
 
-      // TABLA 1 - CORRECCIÓN CLAVE: Usamos autoTable(doc, {...}) en lugar de doc.autoTable
+      // TABLA 1: DATOS DEL CASO
       autoTable(doc, {
         startY: 70,
         theme: 'grid',
@@ -58,33 +67,44 @@ export default function BotonReporteCliente({ caso, nombreAbogado }) {
         ]
       });
 
-      let currentY = 135; 
+      let currentY = 125; 
 
-      // RESUMEN
-      doc.setFontSize(12);
+      // 2. SÍNTESIS DE LOS HECHOS (Aislado de las gestiones)
+      if (caso?.resumenHechos && caso.resumenHechos.trim() !== '') {
+        doc.setFontSize(11);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(...primaryColor);
+        doc.text("SÍNTESIS DEL CASO (HECHOS RELEVANTES)", 14, currentY);
+        
+        doc.setFontSize(10);
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(80, 80, 80); // Tono más suave para los hechos pasados
+        
+        const splitHechos = doc.splitTextToSize(String(caso.resumenHechos), 180);
+        doc.text(splitHechos, 14, currentY + 6);
+        currentY = currentY + 6 + (splitHechos.length * 5) + 8;
+      }
+
+      // 3. ÚLTIMA GESTIÓN REALIZADA (El texto que ingresaste en la ventana emergente)
+      doc.setFontSize(11);
       doc.setFont("helvetica", "bold");
       doc.setTextColor(...primaryColor);
-      doc.text("RESUMEN DE GESTIONES REALIZADAS", 14, currentY);
+      doc.text("ÚLTIMA GESTIÓN REALIZADA", 14, currentY);
       
       doc.setFontSize(10);
       doc.setFont("helvetica", "normal");
-      doc.setTextColor(50, 50, 50);
+      doc.setTextColor(0, 0, 0); // Tono negro fuerte para resaltar la novedad
       
-      const textoResumen = (caso && caso.resumenHechos && caso.resumenHechos.trim() !== '') 
-        ? String(caso.resumenHechos) 
-        : "El proceso avanza conforme a los tiempos del despacho judicial. Se están adelantando las gestiones pertinentes para la defensa de sus intereses.";
-      
-      const splitResumen = doc.splitTextToSize(textoResumen, 180);
-      doc.text(splitResumen, 14, currentY + 8);
+      const splitGestion = doc.splitTextToSize(gestionAlVuelo, 180);
+      doc.text(splitGestion, 14, currentY + 6);
+      currentY = currentY + 6 + (splitGestion.length * 5) + 12;
 
-      // AGENDA
-      currentY = currentY + 10 + (splitResumen.length * 5) + 10;
-      doc.setFontSize(12);
+      // 4. AGENDA Y PRÓXIMOS PASOS
+      doc.setFontSize(11);
       doc.setFont("helvetica", "bold");
       doc.setTextColor(...primaryColor);
       doc.text("AGENDA Y PRÓXIMOS PASOS", 14, currentY);
 
-      // Escudo anti-errores para fechas
       const formatFecha = (f) => {
         if (!f) return 'No registrada';
         try {
@@ -96,32 +116,53 @@ export default function BotonReporteCliente({ caso, nombreAbogado }) {
         }
       };
 
-      // TABLA 2 - CORRECCIÓN CLAVE
       autoTable(doc, {
-        startY: currentY + 5,
+        startY: currentY + 4,
         theme: 'striped',
         headStyles: { fillColor: primaryColor, textColor: 255 },
         head: [['Hito Procesal', 'Fecha Programada', 'Observación']],
         body: [
           ['Presentación Demanda', formatFecha(caso?.fechaPresentacion), ''],
           ['Auto Admisorio', formatFecha(caso?.fechaAdmision), ''],
-          ['Próxima Actuación', formatFecha(caso?.fechaVencimiento), getSafeText(caso?.descVencimiento, 'Monitoreo constante en juzgado')]
+          ['Próxima Actuación', formatFecha(caso?.fechaVencimiento), getSafeText(caso?.descVencimiento, 'Monitoreo constante')]
         ]
       });
 
-      // PIE DE PÁGINA
+      // 5. ESPACIO DE FIRMA DEL ABOGADO
+      // Calculamos la coordenada Y para la firma sin que choque con la tabla
+      let finalY = (doc.lastAutoTable && doc.lastAutoTable.finalY) ? doc.lastAutoTable.finalY + 35 : currentY + 40;
       const pageHeight = doc.internal.pageSize.height;
+      
+      // Si la firma se va a salir de la hoja, creamos una página nueva
+      if (finalY > pageHeight - 30) {
+        doc.addPage();
+        finalY = 40;
+      }
+
+      // Dibujamos la línea de la firma
+      doc.setDrawColor(0, 0, 0);
+      doc.setLineWidth(0.3);
+      doc.line(14, finalY, 70, finalY);
+      
+      // Imprimimos el Nombre y la Tarjeta Profesional
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(0, 0, 0);
+      doc.text(getSafeText(nombreAbogado, 'Abogado').toUpperCase(), 14, finalY + 5);
+      doc.setFont("helvetica", "normal");
+      doc.text("T.P. 310641 del C.S.J.", 14, finalY + 10);
+
+      // PIE DE PÁGINA
       doc.setFontSize(8);
       doc.setTextColor(150, 150, 150);
-      doc.text(`Documento generado confidencialmente por LitisApp el ${new Date().toLocaleDateString('es-CO')}.`, 105, pageHeight - 15, { align: "center" });
+      doc.text(`Documento generado confidencialmente por LitisApp el ${new Date().toLocaleDateString('es-CO')}.`, 105, pageHeight - 10, { align: "center" });
 
-      // DESCARGA
+      // DESCARGA FINAL
       const safeName = nombreCliente.replace(/[^a-zA-Z0-9]/g, '_');
       doc.save(`Reporte_${safeName}_${new Date().toISOString().split('T')[0]}.pdf`);
       
     } catch (error) {
       console.error("Error generando PDF:", error);
-      // Ahora la alerta nos dirá exactamente qué código falló
       alert("Error técnico: " + error.message);
     } finally {
       setGenerando(false);
