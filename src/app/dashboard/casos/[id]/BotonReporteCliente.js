@@ -2,12 +2,11 @@
 
 import React, { useState } from 'react';
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable'; // <-- CORRECCIÓN CLAVE: Importación directa
 
 export default function BotonReporteCliente({ caso, nombreAbogado }) {
   const [generando, setGenerando] = useState(false);
 
-  // Sanitización de textos para evitar que jsPDF falle con nulos
   const getSafeText = (value, defaultText = '') => {
     if (value === null || value === undefined) return defaultText;
     return String(value);
@@ -24,7 +23,7 @@ export default function BotonReporteCliente({ caso, nombreAbogado }) {
       setGenerando(true);
       const doc = new jsPDF();
 
-      const primaryColor = [30, 58, 138];
+      const primaryColor = [30, 58, 138]; // Azul LitisApp
       
       // ENCABEZADO
       doc.setFillColor(...primaryColor);
@@ -45,8 +44,8 @@ export default function BotonReporteCliente({ caso, nombreAbogado }) {
       doc.text(`Estimado(a) cliente ${nombreCliente.toUpperCase()},`, 14, 55);
       doc.text("A continuación, presentamos el informe de estado actual de su proceso judicial gestionado por nuestro despacho.", 14, 62, { maxWidth: 180 });
 
-      // TABLA 1
-      doc.autoTable({
+      // TABLA 1 - CORRECCIÓN CLAVE: Usamos autoTable(doc, {...}) en lugar de doc.autoTable
+      autoTable(doc, {
         startY: 70,
         theme: 'grid',
         headStyles: { fillColor: [241, 245, 249], textColor: [15, 23, 42], fontStyle: 'bold' },
@@ -85,10 +84,20 @@ export default function BotonReporteCliente({ caso, nombreAbogado }) {
       doc.setTextColor(...primaryColor);
       doc.text("AGENDA Y PRÓXIMOS PASOS", 14, currentY);
 
-      const formatFecha = (f) => f ? new Date(f).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' }) : 'No registrada';
+      // Escudo anti-errores para fechas
+      const formatFecha = (f) => {
+        if (!f) return 'No registrada';
+        try {
+          const d = new Date(f);
+          if (isNaN(d.getTime())) return 'Fecha inválida';
+          return d.toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' });
+        } catch(e) {
+          return 'No registrada';
+        }
+      };
 
-      // TABLA 2
-      doc.autoTable({
+      // TABLA 2 - CORRECCIÓN CLAVE
+      autoTable(doc, {
         startY: currentY + 5,
         theme: 'striped',
         headStyles: { fillColor: primaryColor, textColor: 255 },
@@ -112,7 +121,8 @@ export default function BotonReporteCliente({ caso, nombreAbogado }) {
       
     } catch (error) {
       console.error("Error generando PDF:", error);
-      alert("Hubo un error interno al crear el PDF. La descarga fue abortada.");
+      // Ahora la alerta nos dirá exactamente qué código falló
+      alert("Error técnico: " + error.message);
     } finally {
       setGenerando(false);
     }
