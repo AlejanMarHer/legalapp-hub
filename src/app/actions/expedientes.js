@@ -103,3 +103,33 @@ export async function actualizarExpediente(id, data) {
 
   return casoActualizado.id;
 }
+// 4. Resolver Vencimiento y Registrar Gestión
+export async function resolverVencimiento(id, detallesGestion) {
+  const user = await currentUser();
+  if (!user) throw new Error("Usuario no autenticado");
+
+  const caso = await prisma.caso.findUnique({ where: { id } });
+  if (!caso || caso.userId !== user.id) throw new Error("Expediente no encontrado");
+
+  // Creamos el sello de tiempo y formateamos la gestión
+  const fechaHoy = new Date().toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  const descPrevia = caso.descVencimiento ? ` (${caso.descVencimiento})` : '';
+  
+  const nuevaNota = `\n\n✅ [${fechaHoy}] Vencimiento Gestionado${descPrevia}:\n${detallesGestion}`;
+  
+  // Lo sumamos a los apuntes existentes
+  const apuntesActuales = caso.apuntesPrivados || '';
+  const apuntesActualizados = (apuntesActuales + nuevaNota).trim();
+
+  // Actualizamos la base de datos limpiando el vencimiento
+  await prisma.caso.update({
+    where: { id },
+    data: {
+      fechaVencimiento: null,
+      descVencimiento: null,
+      apuntesPrivados: apuntesActualizados
+    }
+  });
+
+  return true;
+}

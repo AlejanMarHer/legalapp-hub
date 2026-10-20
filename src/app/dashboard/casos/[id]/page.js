@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import { PrismaClient } from '@prisma/client';
 import Link from 'next/link';
 import BotonReporteCliente from './BotonReporteCliente';
+import BotonResolverVencimiento from './BotonResolverVencimiento'; // <-- NUEVO BOTÓN
 
 export const dynamic = 'force-dynamic';
 
@@ -53,7 +54,6 @@ export default async function ExpedienteDetallePage({ params }) {
             </p>
           </div>
 
-          {/* CONTENEDOR DE BOTONES CORREGIDO CON FLEX-WRAP */}
           <div className="flex flex-wrap gap-3 w-full md:w-auto justify-start md:justify-end mt-4 md:mt-0">
             <Link 
               href={`/dashboard/casos/${caso.id}/editar`}
@@ -81,7 +81,7 @@ export default async function ExpedienteDetallePage({ params }) {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           
-          {/* COLUMNA IZQUIERDA (Partes y Resumen) */}
+          {/* COLUMNA IZQUIERDA */}
           <div className="lg:col-span-2 space-y-6">
             
             <div className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-slate-200">
@@ -112,8 +112,11 @@ export default async function ExpedienteDetallePage({ params }) {
                   <p className="text-sm text-slate-700 leading-relaxed bg-slate-50 p-4 rounded-xl border border-slate-100">{caso.resumenHechos || 'Aún no has registrado un resumen de los hechos para este proceso.'}</p>
                 </div>
                 <div>
-                  <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Apuntes Privados del Despacho</p>
-                  <p className="text-sm text-slate-700 leading-relaxed bg-yellow-50 p-4 rounded-xl border border-yellow-100">{caso.apuntesPrivados || 'No hay notas privadas.'}</p>
+                  {/* AQUÍ ESTÁ EL CAMBIO PARA LA BITÁCORA */}
+                  <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Bitácora de Gestiones y Apuntes</p>
+                  <p className="text-sm text-slate-700 leading-relaxed bg-yellow-50 p-4 rounded-xl border border-yellow-100 whitespace-pre-wrap">
+                    {caso.apuntesPrivados || 'No hay notas ni gestiones registradas.'}
+                  </p>
                 </div>
               </div>
             </div>
@@ -144,7 +147,7 @@ export default async function ExpedienteDetallePage({ params }) {
 
           </div>
 
-          {/* COLUMNA DERECHA (Métricas y Plazos) */}
+          {/* COLUMNA DERECHA */}
           <div className="space-y-6">
             
             <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-200">
@@ -187,6 +190,12 @@ export default async function ExpedienteDetallePage({ params }) {
                   </div>
                   <p className="text-lg font-black text-orange-950 my-1">{formatFecha(caso.fechaVencimiento)}</p>
                   <p className="text-xs font-semibold text-orange-800 bg-orange-100/50 p-2 rounded-lg">{caso.descVencimiento || 'Sin descripción de la actuación'}</p>
+                  
+                  {/* AQUÍ ESTÁ EL COMPONENTE FUNCIONANDO */}
+                  {caso.fechaVencimiento && (
+                    <BotonResolverVencimiento casoId={caso.id} descVencimiento={caso.descVencimiento} />
+                  )}
+
                 </li>
               </ul>
             </div>
