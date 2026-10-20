@@ -5,7 +5,6 @@ import { PrismaClient } from '@prisma/client';
 import Link from 'next/link';
 import BotonReporteCliente from './BotonReporteCliente';
 
-// Evita que Vercel guarde en caché una versión rota de la página
 export const dynamic = 'force-dynamic';
 
 const prisma = global.prisma || new PrismaClient();
@@ -15,11 +14,9 @@ export default async function ExpedienteDetallePage({ params }) {
   const user = await currentUser();
   if (!user) redirect('/');
 
-  // LA CORRECCIÓN: En Next.js 15+ los params deben resolverse con "await"
   const resolvedParams = await params;
   const casoId = resolvedParams.id;
   
-  // Buscamos el caso y su historial de liquidaciones
   const caso = await prisma.caso.findUnique({
     where: { id: casoId },
     include: { liquidaciones: { orderBy: { createdAt: 'desc' } } }
@@ -56,7 +53,8 @@ export default async function ExpedienteDetallePage({ params }) {
             </p>
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto shrink-0 flex-wrap justify-end">
+          {/* CONTENEDOR DE BOTONES CORREGIDO CON FLEX-WRAP */}
+          <div className="flex flex-wrap gap-3 w-full md:w-auto justify-start md:justify-end mt-4 md:mt-0">
             <Link 
               href={`/dashboard/casos/${caso.id}/editar`}
               className="bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 font-bold py-3.5 px-5 rounded-xl shadow-sm transition-all hover:-translate-y-0.5 flex items-center justify-center gap-2 text-sm"
