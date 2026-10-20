@@ -2,24 +2,23 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { resolverVencimiento } from '../../../../actions/expedientes';
+import { resolverVencimiento } from '@/app/actions/expedientes'; // <-- CORRECCIÓN DE LA RUTA
 
 export default function BotonResolverVencimiento({ casoId, descVencimiento }) {
   const [isResolving, setIsResolving] = useState(false);
   const router = useRouter();
 
   const handleResolver = async () => {
-    // Abrimos ventana preguntando por la gestión
     const detalles = window.prompt(
       `¿Qué gestión realizaste para resolver el vencimiento "${descVencimiento || 'pendiente'}"?\n\nEsto se guardará automáticamente en tu bitácora de gestiones y borrará el vencimiento de la agenda.`
     );
     
-    if (!detalles) return; // Si cancela, no hacemos nada
+    if (!detalles) return;
 
     try {
       setIsResolving(true);
       await resolverVencimiento(casoId, detalles);
-      router.refresh(); // Recarga la pantalla para mostrar los cambios al instante
+      router.refresh();
     } catch (error) {
       alert("Error al guardar la gestión: " + error.message);
       setIsResolving(false);
