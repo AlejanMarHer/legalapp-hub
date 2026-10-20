@@ -4,6 +4,9 @@ import { redirect } from 'next/navigation';
 import { PrismaClient } from '@prisma/client';
 import Link from 'next/link';
 
+// NUEVO: Importamos el botón compacto que acabas de crear
+import BotonResolverDashboard from './BotonResolverDashboard'; 
+
 // Esto obliga a Vercel a actualizar la pantalla cada vez que entras (para ver datos en tiempo real)
 export const dynamic = 'force-dynamic';
 
@@ -100,7 +103,6 @@ export default async function DashboardPage() {
           <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-200 flex flex-col md:flex-row items-center gap-6 relative overflow-hidden">
             <div className="absolute top-0 left-0 w-2 h-full bg-[#1E3A8A]"></div>
             
-            {/* Contenedor del Logo (Por ahora usa la foto de Clerk) */}
             <div className="w-24 h-24 rounded-2xl bg-slate-50 border border-slate-200 shadow-inner flex items-center justify-center overflow-hidden group relative cursor-pointer">
               <img src={user.imageUrl} alt="Logo Despacho" className="w-full h-full object-cover" />
               <div className="absolute inset-0 bg-slate-900/60 hidden group-hover:flex items-center justify-center transition-all">
@@ -174,14 +176,18 @@ export default async function DashboardPage() {
                       const isUrgente = faltanDias <= 3;
                       
                       return (
-                        <li key={caso.id} className="p-5 hover:bg-slate-50 transition-colors flex items-center justify-between gap-4">
+                        <li key={caso.id} className="p-5 hover:bg-slate-50 transition-colors flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                           <div className="flex-1">
                             <p className="text-sm font-bold text-slate-900">{caso.descVencimiento || "Actuación Pendiente"}</p>
                             <p className="text-xs text-slate-500 mt-1">Rad: <span className="font-medium">{caso.radicado || caso.id.slice(-8)}</span> • {caso.demandante} VS {caso.demandado}</p>
                           </div>
-                          <div className={`text-right px-3 py-2 rounded-lg border ${isUrgente ? 'bg-red-50 border-red-100' : 'bg-amber-50 border-amber-100'}`}>
-                            <p className={`text-xs font-bold ${isUrgente ? 'text-red-700' : 'text-amber-700'}`}>{formatFecha(caso.fechaVencimiento)}</p>
-                            <p className={`text-[10px] font-bold uppercase mt-0.5 ${isUrgente ? 'text-red-500' : 'text-amber-600'}`}>En {faltanDias} días</p>
+                          <div className="flex flex-col items-end shrink-0 w-full sm:w-auto">
+                            <div className={`text-right px-3 py-2 rounded-lg border w-full sm:w-auto ${isUrgente ? 'bg-red-50 border-red-100' : 'bg-amber-50 border-amber-100'}`}>
+                              <p className={`text-xs font-bold ${isUrgente ? 'text-red-700' : 'text-amber-700'}`}>{formatFecha(caso.fechaVencimiento)}</p>
+                              <p className={`text-[10px] font-bold uppercase mt-0.5 ${isUrgente ? 'text-red-500' : 'text-amber-600'}`}>En {faltanDias} días</p>
+                            </div>
+                            {/* NUEVO BOTÓN COMPACTO INTEGRADO AQUÍ */}
+                            <BotonResolverDashboard casoId={caso.id} descVencimiento={caso.descVencimiento} />
                           </div>
                         </li>
                       );
