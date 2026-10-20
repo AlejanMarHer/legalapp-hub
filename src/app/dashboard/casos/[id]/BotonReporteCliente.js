@@ -7,7 +7,6 @@ import 'jspdf-autotable';
 export default function BotonReporteCliente({ caso, nombreAbogado }) {
   const [generando, setGenerando] = useState(false);
 
-  // Lógica de resguardo para evitar errores si las partes vienen nulas
   const calidad = caso?.calidadProcesal || '';
   const esDemandado = calidad.includes('Demandada');
   
@@ -20,7 +19,7 @@ export default function BotonReporteCliente({ caso, nombreAbogado }) {
       const doc = new jsPDF();
 
       // 1. COLORES Y ESTILOS BASE
-      const primaryColor = [30, 58, 138]; // Azul LitisApp (#1E3A8A)
+      const primaryColor = [30, 58, 138]; // Azul LitisApp
       
       // 2. ENCABEZADO INSTITUCIONAL
       doc.setFillColor(...primaryColor);
@@ -41,6 +40,7 @@ export default function BotonReporteCliente({ caso, nombreAbogado }) {
       doc.text(`Estimado(a) cliente ${nombreCliente.toUpperCase()},`, 14, 55);
       doc.text("A continuación, presentamos el informe de estado actual de su proceso judicial gestionado por nuestro despacho.", 14, 62, { maxWidth: 180 });
 
+      // Primera tabla (Datos del Proceso)
       doc.autoTable({
         startY: 70,
         theme: 'grid',
@@ -54,36 +54,40 @@ export default function BotonReporteCliente({ caso, nombreAbogado }) {
         ]
       });
 
+      // CORRECCIÓN CLAVE: Calculamos la altura de la primera tabla a mano asumiendo ~10px por fila + padding.
+      // 5 filas * 10 = 50 + startY(70) = ~120. Le damos un margen seguro de 135.
+      let currentY = 135; 
+
       // 4. RESUMEN DE GESTIONES
-      let finalY = (doc.lastAutoTable?.finalY || 100) + 15;
       doc.setFontSize(12);
       doc.setFont("helvetica", "bold");
       doc.setTextColor(...primaryColor);
-      doc.text("RESUMEN DE GESTIONES REALIZADAS", 14, finalY);
+      doc.text("RESUMEN DE GESTIONES REALIZADAS", 14, currentY);
       
       doc.setFontSize(10);
       doc.setFont("helvetica", "normal");
       doc.setTextColor(50, 50, 50);
       
-      // Validación estricta para evitar errores de jsPDF con textos nulos
       const textoResumen = (caso && caso.resumenHechos && caso.resumenHechos.trim() !== '') 
         ? String(caso.resumenHechos) 
         : "El proceso avanza conforme a los tiempos del despacho judicial. Se están adelantando las gestiones pertinentes para la defensa de sus intereses.";
       
       const splitResumen = doc.splitTextToSize(textoResumen, 180);
-      doc.text(splitResumen, 14, finalY + 8);
+      doc.text(splitResumen, 14, currentY + 8);
 
       // 5. AGENDA Y PRÓXIMOS PASOS
-      finalY = finalY + 10 + (splitResumen.length * 5) + 10;
+      // Calculamos el espacio que ocupó el texto + margen para la siguiente tabla
+      currentY = currentY + 10 + (splitResumen.length * 5) + 10;
       doc.setFontSize(12);
       doc.setFont("helvetica", "bold");
       doc.setTextColor(...primaryColor);
-      doc.text("AGENDA Y PRÓXIMOS PASOS", 14, finalY);
+      doc.text("AGENDA Y PRÓXIMOS PASOS", 14, currentY);
 
       const formatFecha = (f) => f ? new Date(f).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' }) : 'No registrada';
 
+      // Segunda tabla (Fechas)
       doc.autoTable({
-        startY: finalY + 5,
+        startY: currentY + 5,
         theme: 'striped',
         headStyles: { fillColor: primaryColor, textColor: 255 },
         head: [['Hito Procesal', 'Fecha Programada', 'Observación']],
@@ -106,7 +110,7 @@ export default function BotonReporteCliente({ caso, nombreAbogado }) {
       
     } catch (error) {
       console.error("Error generando PDF:", error);
-      alert("Hubo un error al generar el reporte. Verifica los datos del expediente.");
+      alert("Hubo un error interno al crear el PDF. La descarga fue abortada.");
     } finally {
       setGenerando(false);
     }
