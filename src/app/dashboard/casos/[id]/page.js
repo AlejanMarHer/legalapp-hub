@@ -3,6 +3,7 @@ import { currentUser } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
 import { PrismaClient } from '@prisma/client';
 import Link from 'next/link';
+import BotonReporteCliente from './BotonReporteCliente';
 
 // Evita que Vercel guarde en caché una versión rota de la página
 export const dynamic = 'force-dynamic';
@@ -55,8 +56,7 @@ export default async function ExpedienteDetallePage({ params }) {
             </p>
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto shrink-0">
-            {/* BOTÓN DE EDITAR AÑADIDO AQUÍ */}
+          <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto shrink-0 flex-wrap justify-end">
             <Link 
               href={`/dashboard/casos/${caso.id}/editar`}
               className="bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 font-bold py-3.5 px-5 rounded-xl shadow-sm transition-all hover:-translate-y-0.5 flex items-center justify-center gap-2 text-sm"
@@ -77,6 +77,7 @@ export default async function ExpedienteDetallePage({ params }) {
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
               Liquidar Intereses
             </Link>
+            <BotonReporteCliente caso={caso} nombreAbogado={`${user.firstName} ${user.lastName}`} />
           </div>
         </div>
 
