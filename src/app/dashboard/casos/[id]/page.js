@@ -19,9 +19,13 @@ export default async function ExpedienteDetallePage({ params }) {
   const resolvedParams = await params;
   const casoId = resolvedParams.id;
   
+  // SE AGREGÓ: "abonos" en el include para traer el historial financiero
   const caso = await prisma.caso.findUnique({
     where: { id: casoId },
-    include: { liquidaciones: { orderBy: { createdAt: 'desc' } } }
+    include: { 
+      liquidaciones: { orderBy: { createdAt: 'desc' } },
+      abonos: { orderBy: { fecha: 'desc' } }
+    }
   });
 
   if (!caso || caso.userId !== user.id) {
@@ -121,6 +125,35 @@ export default async function ExpedienteDetallePage({ params }) {
               </div>
             </div>
 
+            {/* NUEVA SECCIÓN: HISTORIAL DE PAGOS */}
+            <div className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-slate-200">
+              <div className="flex items-center justify-between mb-5 border-b border-slate-100 pb-3">
+                <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider">Historial de Pagos Recibidos</h3>
+                <span className="bg-emerald-100 text-emerald-800 text-[10px] font-black px-2 py-1 rounded-md uppercase">Estado de Cuenta</span>
+              </div>
+              
+              {caso.abonos && caso.abonos.length > 0 ? (
+                <div className="space-y-3">
+                  {caso.abonos.map(abono => (
+                    <div key={abono.id} className="p-4 border border-slate-200 rounded-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-3 hover:bg-slate-50 transition border-l-4 border-l-emerald-500">
+                      <div>
+                        <p className="font-bold text-slate-900 text-sm">{abono.concepto || 'Abono a honorarios'}</p>
+                        <p className="text-xs font-semibold text-slate-500 mt-0.5">Pagado el {formatFecha(abono.fecha)}</p>
+                      </div>
+                      <div className="text-right bg-emerald-50 px-4 py-2 rounded-lg border border-emerald-100">
+                        <p className="text-[10px] text-emerald-600 font-bold uppercase mb-0.5">Ingreso</p>
+                        <p className="font-black text-emerald-700">{formatCOP(abono.monto)}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 bg-slate-50 rounded-xl border border-dashed border-slate-300">
+                  <p className="text-sm text-slate-500 font-medium">Aún no se han registrado pagos para este expediente.</p>
+                </div>
+              )}
+            </div>
+
             <div className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-slate-200">
               <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider mb-5 border-b border-slate-100 pb-3">Historial de Liquidaciones Guardadas</h3>
               {caso.liquidaciones && caso.liquidaciones.length > 0 ? (
@@ -171,7 +204,6 @@ export default async function ExpedienteDetallePage({ params }) {
                 </li>
               </ul>
               
-              {/* BOTÓN DE PAGOS AÑADIDO AQUÍ */}
               <BotonRegistrarPago caso={caso} nombreAbogado={`${user.firstName} ${user.lastName}`} />
             </div>
 
