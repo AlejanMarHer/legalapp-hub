@@ -6,7 +6,8 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { registrarAbono } from '@/app/actions/financiero';
 
-export default function BotonRegistrarPago({ caso, nombreAbogado }) {
+// Se agregaron las props de config: nombreOficial y firmaBase64
+export default function BotonRegistrarPago({ caso, nombreOficial, firmaBase64 }) {
   const [modalAbierto, setModalAbierto] = useState(false);
   const [monto, setMonto] = useState('');
   const [concepto, setConcepto] = useState('Abono a honorarios');
@@ -17,7 +18,7 @@ export default function BotonRegistrarPago({ caso, nombreAbogado }) {
 
   const generarReciboPDF = (abono) => {
     const doc = new jsPDF();
-    const primaryColor = [21, 128, 61]; // Verde oscuro para dinero
+    const primaryColor = [21, 128, 61]; // Verde oscuro
     const nombreCliente = caso.calidadProcesal?.includes('Demandada') ? caso.demandado : caso.demandante;
 
     // Encabezado
@@ -73,16 +74,31 @@ export default function BotonRegistrarPago({ caso, nombreAbogado }) {
       ]
     });
 
-    finalY = doc.lastAutoTable ? doc.lastAutoTable.finalY + 40 : 200;
+    finalY = doc.lastAutoTable ? doc.lastAutoTable.finalY + 30 : 200;
 
-    // Firma
-    doc.setDrawColor(0, 0, 0);
-    doc.setLineWidth(0.3);
-    doc.line(14, finalY, 80, finalY);
+    // Inyectamos la FIRMA si existe, si no, dibujamos una línea
+    if (firmaBase64) {
+      try {
+        doc.addImage(firmaBase64, 'PNG', 14, finalY, 50, 25);
+        finalY += 25; // Bajamos el texto de abajo para dejarle espacio a la foto
+      } catch (e) {
+        console.error("Error cargando firma", e);
+        doc.setDrawColor(0, 0, 0);
+        doc.setLineWidth(0.3);
+        doc.line(14, finalY + 15, 80, finalY + 15);
+        finalY += 15;
+      }
+    } else {
+      doc.setDrawColor(0, 0, 0);
+      doc.setLineWidth(0.3);
+      doc.line(14, finalY + 15, 80, finalY + 15);
+      finalY += 15;
+    }
+
     doc.setFont("helvetica", "bold");
-    doc.text(nombreAbogado.toUpperCase(), 14, finalY + 5);
+    doc.text(nombreOficial.toUpperCase(), 14, finalY + 5);
     doc.setFont("helvetica", "normal");
-    doc.text("Firma de Recibido - T.P. 310641", 14, finalY + 10);
+    doc.text("Firma de Recibido", 14, finalY + 10);
 
     doc.save(`Recibo_Caja_${nombreCliente.replace(/\s+/g, '_')}_${new Date().getTime()}.pdf`);
   };
