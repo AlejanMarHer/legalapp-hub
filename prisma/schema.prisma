@@ -96,3 +96,15 @@ model Argumento {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 }
+
+model Configuracion {
+  id             String   @id @default(cuid())
+  userId         String   @unique
+  
+  nombreDespacho String?  // Ej: "Martínez & Asociados" o "Alejandro Martinez Abogados"
+  logoBase64     String?  @db.Text // Aquí guardaremos tu Logo convertido en código
+  firmaBase64    String?  @db.Text // Aquí guardaremos tu firma con fondo transparente
+  
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}

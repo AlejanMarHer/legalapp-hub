@@ -4,8 +4,9 @@ import { redirect } from 'next/navigation';
 import { PrismaClient } from '@prisma/client';
 import Link from 'next/link';
 
-// Importamos el botón compacto
+// Importamos componentes y funciones
 import BotonResolverDashboard from './BotonResolverDashboard'; 
+import { obtenerConfiguracion } from '@/app/actions/configuracion'; // NUEVO: Para traer tu marca blanca
 
 export const dynamic = 'force-dynamic';
 
@@ -16,19 +17,22 @@ export default async function DashboardPage() {
   const user = await currentUser();
   if (!user) redirect('/');
 
-  // 1. OBTENER TODOS LOS CASOS
+  // 1. OBTENER CONFIGURACIÓN DE MARCA BLANCA
+  const config = await obtenerConfiguracion();
+
+  // 2. OBTENER TODOS LOS CASOS
   const casos = await prisma.caso.findMany({
     where: { userId: user.id },
   });
 
-  // 2. CALCULAR MÉTRICAS
+  // 3. CALCULAR MÉTRICAS
   const activos = casos.filter(c => c.estadoInterno === 'Activo');
   const totalActivos = activos.length;
   
   const cuantiaTotal = activos.reduce((sum, c) => sum + (c.cuantia || 0), 0);
   const honorariosPendientes = activos.reduce((sum, c) => sum + (c.saldoHonorarios || 0), 0);
 
-  // 3. CALCULAR VENCIMIENTOS
+  // 4. CALCULAR VENCIMIENTOS
   const hoy = new Date();
   hoy.setHours(0, 0, 0, 0);
   const en15Dias = new Date();
@@ -40,6 +44,10 @@ export default async function DashboardPage() {
 
   const formatCOP = (val) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(val);
   const formatFecha = (fecha) => new Date(fecha).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' });
+
+  // Variables para la interfaz (usan la marca blanca si existe, si no, usan los de Clerk)
+  const nombreMostrar = config.nombreDespacho || `Despacho de ${user.firstName} ${user.lastName}`;
+  const logoMostrar = config.logoBase64 || user.imageUrl;
 
   return (
     <div className="flex h-screen bg-[#F8FAFC]">
@@ -79,12 +87,13 @@ export default async function DashboardPage() {
           </Link>
         </nav>
         <div className="p-4 border-t border-slate-200">
+          {/* Perfil en el menú lateral adaptado */}
           <div className="bg-slate-50 rounded-xl p-4 border border-slate-100 flex items-center gap-3">
-            <div className="w-10 h-10 bg-[#1E3A8A] text-white rounded-full flex items-center justify-center font-bold text-lg overflow-hidden">
-              {user.imageUrl ? <img src={user.imageUrl} alt="User" /> : (user.firstName?.charAt(0) || 'A')}
+            <div className="w-10 h-10 bg-[#1E3A8A] text-white rounded-full flex items-center justify-center font-bold text-lg overflow-hidden shrink-0">
+              <img src={logoMostrar} alt="Logo" className="w-full h-full object-cover" />
             </div>
-            <div>
-              <p className="text-sm font-bold text-slate-800">{user.firstName} {user.lastName}</p>
+            <div className="truncate">
+              <p className="text-sm font-bold text-slate-800 truncate" title={nombreMostrar}>{nombreMostrar}</p>
               <p className="text-xs text-slate-500 font-medium">Abogado Titular</p>
             </div>
           </div>
@@ -95,19 +104,23 @@ export default async function DashboardPage() {
       <main className="flex-1 overflow-y-auto">
         <div className="p-6 md:p-10 max-w-7xl mx-auto space-y-8">
           
-          {/* 1. MÓDULO DE BRANDING */}
+          {/* 1. MÓDULO DE BRANDING (Actualizado con Marca Blanca) */}
           <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-200 flex flex-col md:flex-row items-center gap-6 relative overflow-hidden">
             <div className="absolute top-0 left-0 w-2 h-full bg-[#1E3A8A]"></div>
-            <div className="w-24 h-24 rounded-2xl bg-slate-50 border border-slate-200 shadow-inner flex items-center justify-center overflow-hidden group relative cursor-pointer">
-              <img src={user.imageUrl} alt="Logo Despacho" className="w-full h-full object-cover" />
-              <div className="absolute inset-0 bg-slate-900/60 hidden group-hover:flex items-center justify-center transition-all">
-                <span className="text-white text-[10px] font-bold text-center leading-tight">Configurar<br/>Logo</span>
+            
+            {/* EL NUEVO BOTÓN PARA IR A CONFIGURACIÓN */}
+            <Link href="/dashboard/configuracion" className="w-24 h-24 rounded-2xl bg-slate-50 border border-slate-200 shadow-inner flex items-center justify-center overflow-hidden group relative cursor-pointer shrink-0">
+              <img src={logoMostrar} alt="Logo Despacho" className="w-full h-full object-contain p-2" />
+              <div className="absolute inset-0 bg-slate-900/70 hidden group-hover:flex items-center justify-center transition-all">
+                <span className="text-white text-[10px] font-bold text-center leading-tight">Configurar<br/>Marca</span>
               </div>
-            </div>
+            </Link>
+
             <div className="flex-1 text-center md:text-left">
-              <h1 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">Despacho de {user.firstName} {user.lastName}</h1>
+              <h1 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">{nombreMostrar}</h1>
               <p className="text-sm text-slate-500 font-medium mt-1">Plataforma de Gestión Jurídica Integrada</p>
             </div>
+            
             <div className="text-right hidden md:block bg-blue-50/50 px-5 py-3 rounded-xl border border-blue-100">
               <p className="text-[10px] text-blue-600 font-bold uppercase tracking-wider mb-1">Día de Operación</p>
               <p className="text-sm font-bold text-blue-900 capitalize">{new Date().toLocaleDateString('es-CO', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
@@ -199,7 +212,7 @@ export default async function DashboardPage() {
             </div>
           </div>
 
-          {/* 4. MANUAL DE USUARIO (NUEVO) */}
+          {/* 4. MANUAL DE USUARIO */}
           <div className="bg-gradient-to-br from-white to-slate-50 rounded-3xl p-8 md:p-10 shadow-sm border border-slate-200 mt-10">
             <div className="flex items-center gap-4 mb-8 border-b border-slate-200 pb-5">
               <div className="w-12 h-12 bg-blue-100 text-[#1E3A8A] rounded-xl flex items-center justify-center shadow-inner">
