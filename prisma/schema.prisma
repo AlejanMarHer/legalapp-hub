@@ -84,3 +84,15 @@ model Abono {
   casoId      String
   caso        Caso     @relation(fields: [casoId], references: [id], onDelete: Cascade)
 }
+
+model Argumento {
+  id            String   @id @default(cuid())
+  titulo        String   // Ej: "Falta de Legitimación en la Causa por Pasiva"
+  contenido     String   @db.Text // @db.Text permite guardar textos muy largos
+  ramaDerecho   String   // Ej: "Civil", "Laboral", "Constitucional"
+  palabrasClave String?  // Ej: "excepciones, demanda, cobro"
+  
+  userId        String   // Para que tus argumentos sean privados y solo tuyos
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
