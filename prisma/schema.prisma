@@ -108,3 +108,16 @@ model Configuracion {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 }
+
+model Tarea {
+  id               String    @id @default(cuid())
+  titulo           String    // Ej: "Radicar memorial de embargo"
+  descripcion      String?   @db.Text
+  estado           String    @default("POR HACER") // POR HACER, EN TRÁMITE, FINALIZADO
+  prioridad        String    @default("Media") // Alta, Media, Baja
+  fechaVencimiento DateTime? 
+  
+  userId           String    // Para que solo tú veas tus tareas
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+}

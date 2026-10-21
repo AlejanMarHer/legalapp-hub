@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import { PrismaClient } from '@prisma/client';
 import Link from 'next/link';
 
+// Importamos componentes y funciones
 import BotonResolverDashboard from './BotonResolverDashboard'; 
 import { obtenerConfiguracion } from '@/app/actions/configuracion';
 
@@ -44,7 +45,6 @@ export default async function DashboardPage() {
   const logoMostrar = config.logoBase64 || user.imageUrl;
 
   return (
-    // CAMBIO 1: El contenedor cambia de flex-row a flex-col en celulares
     <div className="flex flex-col md:flex-row h-screen bg-[#F8FAFC] overflow-hidden">
       
       {/* 📱 NAVEGACIÓN MÓVIL (Solo visible en celulares) */}
@@ -64,11 +64,12 @@ export default async function DashboardPage() {
           </div>
         </div>
         
-        {/* Chips de navegación desplazables horizontalmente */}
+        {/* Chips de navegación desplazables horizontalmente (Añadido Tablero de Tareas) */}
         <div className="px-4 py-3 overflow-x-auto whitespace-nowrap flex gap-2 [&::-webkit-scrollbar]:hidden">
           <Link href="/dashboard" className="inline-block px-4 py-2 bg-blue-50 text-blue-700 rounded-xl text-sm font-bold border border-blue-100">Centro de Mando</Link>
           <Link href="/dashboard/casos" className="inline-block px-4 py-2 bg-slate-50 text-slate-600 hover:bg-slate-100 rounded-xl text-sm font-semibold border border-slate-200">Mis Expedientes</Link>
-          <Link href="/dashboard/biblioteca" className="inline-block px-4 py-2 bg-slate-50 text-slate-600 hover:bg-slate-100 rounded-xl text-sm font-semibold border border-slate-200">Biblioteca</Link>
+          <Link href="/dashboard/biblioteca" className="inline-block px-4 py-2 bg-slate-50 text-slate-600 hover:bg-slate-100 rounded-xl text-sm font-semibold border border-slate-200">Biblioteca Legal</Link>
+          <Link href="/dashboard/tareas" className="inline-block px-4 py-2 bg-slate-50 text-slate-600 hover:bg-slate-100 rounded-xl text-sm font-semibold border border-slate-200">Tablero de Tareas</Link>
           <Link href="/dashboard/intereses" className="inline-block px-4 py-2 bg-slate-50 text-slate-600 hover:bg-slate-100 rounded-xl text-sm font-semibold border border-slate-200">Liquidador Intereses</Link>
           <Link href="/dashboard/laboral" className="inline-block px-4 py-2 bg-slate-50 text-slate-600 hover:bg-slate-100 rounded-xl text-sm font-semibold border border-slate-200">Liquidador Laboral</Link>
           <Link href="/dashboard/indexacion" className="inline-block px-4 py-2 bg-slate-50 text-slate-600 hover:bg-slate-100 rounded-xl text-sm font-semibold border border-slate-200">Indexación (DANE)</Link>
@@ -101,6 +102,12 @@ export default async function DashboardPage() {
             <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
             Biblioteca Legal
           </Link>
+
+          {/* NUEVO ENLACE: TABLERO DE TAREAS */}
+          <Link href="/dashboard/tareas" className="flex items-center gap-3 px-4 py-3 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl font-medium transition">
+            <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+            Tablero de Tareas
+          </Link>
           
           <div className="pt-4 pb-2"><p className="px-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Herramientas</p></div>
           <Link href="/dashboard/indexacion" className="flex items-center gap-3 px-4 py-3 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl font-medium transition">
@@ -129,7 +136,7 @@ export default async function DashboardPage() {
         </div>
       </aside>
 
-      {/* ÁREA PRINCIPAL (Ajuste de paddings para celulares) */}
+      {/* ÁREA PRINCIPAL */}
       <main className="flex-1 overflow-y-auto">
         <div className="p-4 md:p-10 max-w-7xl mx-auto space-y-6 md:space-y-8">
           
@@ -254,7 +261,7 @@ export default async function DashboardPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
               
-              {/* Tarjetas del Manual (se mantienen igual, solo ajustadas al grid) */}
+              {/* Tarjetas del Manual */}
               <div className="bg-white p-5 md:p-6 rounded-2xl border border-slate-100 shadow-sm">
                 <div className="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-lg flex items-center justify-center mb-3"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg></div>
                 <h3 className="font-bold text-slate-800 mb-2">Gestión de Expedientes</h3>
