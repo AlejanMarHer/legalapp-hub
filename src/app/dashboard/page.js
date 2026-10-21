@@ -6,7 +6,7 @@ import Link from 'next/link';
 
 // Importamos componentes y funciones
 import BotonResolverDashboard from './BotonResolverDashboard'; 
-import { obtenerConfiguracion } from '@/app/actions/configuracion'; // NUEVO: Para traer tu marca blanca
+import { obtenerConfiguracion } from '@/app/actions/configuracion';
 
 export const dynamic = 'force-dynamic';
 
@@ -53,10 +53,18 @@ export default async function DashboardPage() {
     <div className="flex h-screen bg-[#F8FAFC]">
       {/* MENÚ LATERAL */}
       <aside className="w-64 bg-white border-r border-slate-200 flex flex-col shrink-0">
-        <div className="p-6 border-b border-slate-200">
-          <h2 className="text-2xl font-black text-[#1E3A8A] tracking-tight">LitisApp</h2>
-          <p className="text-xs text-slate-500 font-medium uppercase mt-1 tracking-wider">Despacho Digital</p>
+        
+        {/* NUEVO LOGO LITISAPP EN EL MENÚ LATERAL */}
+        <div className="p-6 border-b border-slate-200 flex items-center gap-3">
+          <div className="w-10 h-10 bg-[#0A101D] rounded-xl flex items-center justify-center shrink-0 shadow-md p-1.5">
+            <img src="/logo-simbolo.png" alt="Símbolo LitisApp" className="w-full h-full object-contain" />
+          </div>
+          <div>
+            <h2 className="text-xl font-black text-[#1E3A8A] tracking-tight leading-none">LitisApp</h2>
+            <p className="text-[10px] text-slate-500 font-bold uppercase mt-1 tracking-wider">Despacho Digital</p>
+          </div>
         </div>
+
         <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
           <Link href="/dashboard" className="flex items-center gap-3 px-4 py-3 bg-blue-50 text-blue-700 rounded-xl font-bold transition">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
@@ -87,7 +95,6 @@ export default async function DashboardPage() {
           </Link>
         </nav>
         <div className="p-4 border-t border-slate-200">
-          {/* Perfil en el menú lateral adaptado */}
           <div className="bg-slate-50 rounded-xl p-4 border border-slate-100 flex items-center gap-3">
             <div className="w-10 h-10 bg-[#1E3A8A] text-white rounded-full flex items-center justify-center font-bold text-lg overflow-hidden shrink-0">
               <img src={logoMostrar} alt="Logo" className="w-full h-full object-cover" />
@@ -104,11 +111,10 @@ export default async function DashboardPage() {
       <main className="flex-1 overflow-y-auto">
         <div className="p-6 md:p-10 max-w-7xl mx-auto space-y-8">
           
-          {/* 1. MÓDULO DE BRANDING (Actualizado con Marca Blanca) */}
+          {/* 1. MÓDULO DE BRANDING */}
           <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-200 flex flex-col md:flex-row items-center gap-6 relative overflow-hidden">
             <div className="absolute top-0 left-0 w-2 h-full bg-[#1E3A8A]"></div>
             
-            {/* EL NUEVO BOTÓN PARA IR A CONFIGURACIÓN */}
             <Link href="/dashboard/configuracion" className="w-24 h-24 rounded-2xl bg-slate-50 border border-slate-200 shadow-inner flex items-center justify-center overflow-hidden group relative cursor-pointer shrink-0">
               <img src={logoMostrar} alt="Logo Despacho" className="w-full h-full object-contain p-2" />
               <div className="absolute inset-0 bg-slate-900/70 hidden group-hover:flex items-center justify-center transition-all">
