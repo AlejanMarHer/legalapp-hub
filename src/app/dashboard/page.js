@@ -64,9 +64,11 @@ export default async function DashboardPage() {
           </div>
         </div>
         
-        {/* Chips de navegación desplazables horizontalmente (Añadido Tablero de Tareas) */}
+        {/* Chips de navegación desplazables horizontalmente */}
         <div className="px-4 py-3 overflow-x-auto whitespace-nowrap flex gap-2 [&::-webkit-scrollbar]:hidden">
           <Link href="/dashboard" className="inline-block px-4 py-2 bg-blue-50 text-blue-700 rounded-xl text-sm font-bold border border-blue-100">Centro de Mando</Link>
+          {/* NUEVO ENLACE: DIRECTORIO CLIENTES */}
+          <Link href="/dashboard/clientes" className="inline-block px-4 py-2 bg-slate-50 text-slate-600 hover:bg-slate-100 rounded-xl text-sm font-semibold border border-slate-200">Directorio Clientes</Link>
           <Link href="/dashboard/casos" className="inline-block px-4 py-2 bg-slate-50 text-slate-600 hover:bg-slate-100 rounded-xl text-sm font-semibold border border-slate-200">Mis Expedientes</Link>
           <Link href="/dashboard/biblioteca" className="inline-block px-4 py-2 bg-slate-50 text-slate-600 hover:bg-slate-100 rounded-xl text-sm font-semibold border border-slate-200">Biblioteca Legal</Link>
           <Link href="/dashboard/tareas" className="inline-block px-4 py-2 bg-slate-50 text-slate-600 hover:bg-slate-100 rounded-xl text-sm font-semibold border border-slate-200">Tablero de Tareas</Link>
@@ -94,6 +96,13 @@ export default async function DashboardPage() {
             Centro de Mando
           </Link>
           <div className="pt-4 pb-2"><p className="px-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Gestión CRM</p></div>
+          
+          {/* NUEVO ENLACE: DIRECTORIO CLIENTES */}
+          <Link href="/dashboard/clientes" className="flex items-center gap-3 px-4 py-3 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl font-medium transition">
+            <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+            Directorio Clientes
+          </Link>
+
           <Link href="/dashboard/casos" className="flex items-center gap-3 px-4 py-3 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl font-medium transition">
             <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
             Mis Expedientes
@@ -103,7 +112,6 @@ export default async function DashboardPage() {
             Biblioteca Legal
           </Link>
 
-          {/* NUEVO ENLACE: TABLERO DE TAREAS */}
           <Link href="/dashboard/tareas" className="flex items-center gap-3 px-4 py-3 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl font-medium transition">
             <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
             Tablero de Tareas

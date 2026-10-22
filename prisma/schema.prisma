@@ -53,6 +53,10 @@ model Caso {
   // 7. Observaciones
   resumenHechos       String?   @db.Text
   apuntesPrivados     String?   @db.Text
+
+  // Relación con el Cliente (Opcional por ahora para no borrar los casos que ya creaste)
+  clienteId        String?
+  cliente          Cliente?  @relation(fields: [clienteId], references: [id])
   
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
@@ -120,4 +124,21 @@ model Tarea {
   userId           String    // Para que solo tú veas tus tareas
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
+}
+
+model Cliente {
+  id             String   @id @default(cuid())
+  nombre         String
+  identificacion String?  // Cédula o NIT
+  email          String?
+  telefono       String?
+  direccion      String?
+  notas          String?  @db.Text
+  
+  userId         String   // Para que los clientes sean privados de tu cuenta
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Relación: Un cliente puede tener múltiples casos
+  casos          Caso[]   
 }
