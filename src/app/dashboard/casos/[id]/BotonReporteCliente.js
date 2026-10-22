@@ -89,7 +89,11 @@ export default function BotonReporteCliente({ caso, nombreOficial, logoBase64, f
 
         doc.setFont("helvetica", "normal");
         doc.setFontSize(9);
-        const lineasApuntes = doc.splitTextToSize(caso.apuntesPrivados, 182);
+        
+        // CORRECCIÓN: Limpieza de Emojis para jsPDF y división de líneas
+        const textoLimpio = caso.apuntesPrivados.replace(/📌/g, '>');
+        const lineasApuntes = doc.splitTextToSize(textoLimpio, 182);
+        
         doc.text(lineasApuntes, 14, finalY + 8);
         finalY += (lineasApuntes.length * 5) + 15;
       }
