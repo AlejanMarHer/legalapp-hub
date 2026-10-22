@@ -269,39 +269,56 @@ export default async function DashboardPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
               
-              {/* Tarjetas del Manual */}
-              <div className="bg-white p-5 md:p-6 rounded-2xl border border-slate-100 shadow-sm">
-                <div className="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-lg flex items-center justify-center mb-3"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg></div>
-                <h3 className="font-bold text-slate-800 mb-2">Gestión de Expedientes</h3>
-                <p className="text-xs md:text-sm text-slate-600 leading-relaxed">Crea procesos, asigna cuantías y mantén un resumen de hechos. Puedes usar la <b>Bitácora de Gestiones</b> para escribir apuntes privados del caso que se guardarán automáticamente.</p>
+              {/* 1. Directorio CRM (NUEVO) */}
+              <div className="bg-white p-5 md:p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
+                <div className="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-lg flex items-center justify-center mb-3">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                </div>
+                <h3 className="font-bold text-slate-800 mb-2">Directorio de Clientes (CRM)</h3>
+                <p className="text-xs md:text-sm text-slate-600 leading-relaxed">Tu base de datos central. Registra a tus asesorados para crearles una <b>Carpeta Maestra</b> donde gestionas su información de contacto, notas y su portafolio de expedientes.</p>
               </div>
 
-              <div className="bg-white p-5 md:p-6 rounded-2xl border border-slate-100 shadow-sm">
-                <div className="w-10 h-10 bg-orange-50 text-orange-600 rounded-lg flex items-center justify-center mb-3"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg></div>
-                <h3 className="font-bold text-slate-800 mb-2">Agenda Inteligente</h3>
-                <p className="text-xs md:text-sm text-slate-600 leading-relaxed">Programa el próximo vencimiento del caso. Aparecerá en tu Centro de Mando. Usa el botón <b>"Gestionar"</b> para registrar lo que hiciste; esto limpiará tu agenda y actualizará tu bitácora.</p>
+              {/* 2. Expedientes y Agenda (Fusionado) */}
+              <div className="bg-white p-5 md:p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
+                <div className="w-10 h-10 bg-orange-50 text-orange-600 rounded-lg flex items-center justify-center mb-3">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                </div>
+                <h3 className="font-bold text-slate-800 mb-2">Expedientes y Agenda</h3>
+                <p className="text-xs md:text-sm text-slate-600 leading-relaxed">Mantén el resumen de cada caso y programa vencimientos. Usa el botón <b>"Gestionar"</b> en tu Centro de Mando para registrar actuaciones y actualizar automáticamente la bitácora.</p>
               </div>
 
-              <div className="bg-white p-5 md:p-6 rounded-2xl border border-slate-100 shadow-sm">
-                <div className="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-lg flex items-center justify-center mb-3"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>
+              {/* 3. Módulo Financiero */}
+              <div className="bg-white p-5 md:p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
+                <div className="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-lg flex items-center justify-center mb-3">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                </div>
                 <h3 className="font-bold text-slate-800 mb-2">Módulo Financiero</h3>
                 <p className="text-xs md:text-sm text-slate-600 leading-relaxed">Controla los honorarios pendientes en cada expediente. Al usar <b>"Registrar Pago"</b>, se descontará de la deuda, se generará un Recibo en PDF y se creará el historial.</p>
               </div>
 
-              <div className="bg-white p-5 md:p-6 rounded-2xl border border-slate-100 shadow-sm">
-                <div className="w-10 h-10 bg-red-50 text-red-600 rounded-lg flex items-center justify-center mb-3"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg></div>
+              {/* 4. Generación de Documentos */}
+              <div className="bg-white p-5 md:p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
+                <div className="w-10 h-10 bg-red-50 text-red-600 rounded-lg flex items-center justify-center mb-3">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                </div>
                 <h3 className="font-bold text-slate-800 mb-2">Generación de Documentos</h3>
                 <p className="text-xs md:text-sm text-slate-600 leading-relaxed">Crea Poderes Especiales editables en Word (.docx) mapeando los datos automáticamente. Genera <b>Reportes para Clientes en PDF</b> separando la historia general de la última gestión.</p>
               </div>
 
-              <div className="bg-white p-5 md:p-6 rounded-2xl border border-slate-100 shadow-sm">
-                <div className="w-10 h-10 bg-amber-50 text-amber-600 rounded-lg flex items-center justify-center mb-3"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg></div>
+              {/* 5. Biblioteca Legal */}
+              <div className="bg-white p-5 md:p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
+                <div className="w-10 h-10 bg-amber-50 text-amber-600 rounded-lg flex items-center justify-center mb-3">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+                </div>
                 <h3 className="font-bold text-slate-800 mb-2">Biblioteca Legal</h3>
                 <p className="text-xs md:text-sm text-slate-600 leading-relaxed">Tu segundo cerebro jurídico. Guarda tus mejores párrafos, argumentos y jurisprudencia. Usa el botón <b>"Copiar"</b> para pegarlos en tus demandas en un instante.</p>
               </div>
 
-              <div className="bg-white p-5 md:p-6 rounded-2xl border border-slate-100 shadow-sm">
-                <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-lg flex items-center justify-center mb-3"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg></div>
+              {/* 6. Liquidadores Especiales */}
+              <div className="bg-white p-5 md:p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
+                <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-lg flex items-center justify-center mb-3">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                </div>
                 <h3 className="font-bold text-slate-800 mb-2">Liquidadores Especiales</h3>
                 <p className="text-xs md:text-sm text-slate-600 leading-relaxed">Ejecuta cálculos usando la calculadora de <b>Intereses (SFC)</b>, indexación de capital <b>(DANE)</b> o liquidación de prestaciones sociales directamente en tu sistema.</p>
               </div>
