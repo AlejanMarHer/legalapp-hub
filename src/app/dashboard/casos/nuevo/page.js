@@ -94,7 +94,7 @@ function FormularioExpediente() {
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <div className="md:col-span-2">
-              <label className="block text-xs font-bold text-slate-600 mb-1">Número de Radicado (21 dígitos)</label>
+              <label className="block text-xs font-bold text-slate-600 mb-1">Número de Radicado (23 dígitos)</label>
               <input type="text" name="radicado" value={formData.radicado} onChange={handleChange} className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-600 outline-none transition-all" placeholder="Ej. 11001400301720240012300" />
             </div>
             <div className="md:col-span-2">

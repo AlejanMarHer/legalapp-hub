@@ -10,8 +10,8 @@ export default function RadarCliente({ casos }) {
   const [procesandoId, setProcesandoId] = useState(null);
   const [barridoGlobal, setBarridoGlobal] = useState(false);
 
-  // Filtrar solo casos con radicado válido (21 dígitos)
-  const casosRastreables = casos.filter(c => c.radicado && c.radicado.replace(/[^0-9]/g, '').length === 21);
+  // Filtrar solo casos con radicado válido (23 dígitos)
+  const casosRastreables = casos.filter(c => c.radicado && c.radicado.replace(/[^0-9]/g, '').length === 23);
   const casosConAlerta = casosRastreables.filter(c => c.radarAlerta).length;
 
   const handleSincronizarUno = async (casoId) => {
@@ -88,7 +88,7 @@ export default function RadarCliente({ casos }) {
             <div className="w-12 h-12 bg-slate-700 rounded-full flex items-center justify-center text-slate-300 font-black text-xl">{casosRastreables.length}</div>
             <div>
               <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Procesos Rastreables</p>
-              <p className="text-sm text-slate-500">Con 21 dígitos correctos</p>
+              <p className="text-sm text-slate-500">Con 23 dígitos correctos</p>
             </div>
           </div>
           <div className="bg-slate-800 p-6 rounded-2xl border border-slate-700 flex items-center gap-4">
@@ -110,7 +110,7 @@ export default function RadarCliente({ casos }) {
           
           <div className="divide-y divide-slate-700">
             {casosRastreables.length === 0 ? (
-              <div className="p-10 text-center text-slate-500">No tienes expedientes con radicados de 21 dígitos válidos.</div>
+              <div className="p-10 text-center text-slate-500">No tienes expedientes con radicados de 23 dígitos válidos.</div>
             ) : (
               casosRastreables.map(caso => (
                 <div key={caso.id} className={`p-6 flex flex-col lg:flex-row lg:items-center justify-between gap-6 transition-colors ${caso.radarAlerta ? 'bg-red-500/5' : 'hover:bg-slate-700/50'}`}>

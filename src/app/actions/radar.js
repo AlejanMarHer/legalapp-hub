@@ -17,8 +17,8 @@ export async function sincronizarRadicado(casoId) {
   // Limpiar el radicado de espacios o guiones
   const radicadoLimpio = caso.radicado ? caso.radicado.replace(/[^0-9]/g, '') : '';
   
-  if (radicadoLimpio.length !== 21) {
-    return { exito: false, mensaje: "El radicado debe tener 21 dígitos numéricos exactos." };
+  if (radicadoLimpio.length !== 23) {
+    return { exito: false, mensaje: "El radicado debe tener 23 dígitos numéricos exactos." };
   }
 
   try {
