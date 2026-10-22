@@ -1,22 +1,22 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { guardarNuevoExpediente, obtenerListaClientesSelect } from '../../../actions/expedientes';
 
-export default function NuevoExpedientePage() {
+// Componente interno que contiene la lógica de los parámetros de búsqueda
+function FormularioExpediente() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isSaving, setIsSaving] = useState(false);
   const [clientesDisponibles, setClientesDisponibles] = useState([]);
   
-  // Atrapamos la magia de la URL (Si vienes del Perfil del Cliente)
   const clienteIdUrl = searchParams.get('clienteId');
   const nombreClienteUrl = searchParams.get('nombre');
 
   const [formData, setFormData] = useState({
-    clienteId: clienteIdUrl || '', // NUEVO: Vinculación
+    clienteId: clienteIdUrl || '',
     radicado: '', juzgado: '', ciudad: 'Bogotá D.C.', areaDerecho: 'Civil', claseProceso: '', estadoInterno: 'Activo',
     demandante: '', idDemandante: '', demandado: '', idDemandado: '', calidadProcesal: 'Apoderado Demandante',
     cuantia: '', capitalBase: '', honorariosPactados: '', saldoHonorarios: '',
@@ -26,7 +26,6 @@ export default function NuevoExpedientePage() {
     resumenHechos: '', apuntesPrivados: ''
   });
 
-  // Traer los clientes de la base de datos para el desplegable
   useEffect(() => {
     async function cargarClientes() {
       try {
@@ -57,207 +56,202 @@ export default function NuevoExpedientePage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50/50 p-4 md:p-8 font-sans">
-      <div className="max-w-4xl mx-auto space-y-6">
-        
-        <Link href={clienteIdUrl ? `/dashboard/clientes/${clienteIdUrl}` : "/dashboard/casos"} className="text-blue-600 flex items-center gap-2 hover:underline font-medium text-sm w-fit">
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
-          {clienteIdUrl ? `Volver al perfil de ${nombreClienteUrl}` : 'Volver a mis expedientes'}
-        </Link>
+    <>
+      <Link href={clienteIdUrl ? `/dashboard/clientes/${clienteIdUrl}` : "/dashboard/casos"} className="text-blue-600 flex items-center gap-2 hover:underline font-medium text-sm w-fit mb-6">
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+        {clienteIdUrl ? `Volver al perfil de ${nombreClienteUrl}` : 'Volver a mis expedientes'}
+      </Link>
 
-        <div>
-          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Radicar Nuevo Expediente</h1>
-          <p className="text-slate-500 mt-1 text-sm">Ingresa los datos procesales para crear un nuevo registro completo en tu despacho virtual.</p>
+      <div className="mb-6">
+        <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Radicar Nuevo Expediente</h1>
+        <p className="text-slate-500 mt-1 text-sm">Ingresa los datos procesales para crear un nuevo registro completo en tu despacho virtual.</p>
+      </div>
+
+      <form onSubmit={handleSubmit} className="space-y-6 pb-20">
+        
+        {/* ASIGNACIÓN AL CLIENTE (CRM) */}
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 md:p-8 rounded-2xl shadow-sm border border-blue-100">
+          <h2 className="text-lg font-black text-blue-900 pb-3 mb-4 flex items-center gap-2">
+            <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+            Asignación del CRM (Directorio de Clientes)
+          </h2>
+          
+          {clienteIdUrl ? (
+            <div className="bg-white p-4 rounded-xl border border-blue-200 flex items-center justify-between">
+              <div>
+                <p className="text-[10px] text-blue-500 font-bold uppercase tracking-wider mb-0.5">Expediente asociado a:</p>
+                <p className="font-bold text-slate-800 text-lg">{nombreClienteUrl}</p>
+              </div>
+              <div className="w-10 h-10 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"/></svg>
+              </div>
+            </div>
+          ) : (
+            <div>
+              <label className="block text-xs font-bold text-blue-800 mb-2">Selecciona al cliente propietario de este proceso</label>
+              <select name="clienteId" value={formData.clienteId} onChange={handleChange} className="w-full border border-blue-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-600 outline-none bg-white cursor-pointer font-medium text-slate-800 shadow-sm">
+                <option value="">-- No vincular a ningún cliente por ahora --</option>
+                {clientesDisponibles.map(cli => (
+                  <option key={cli.id} value={cli.id}>{cli.nombre} {cli.identificacion ? `(${cli.identificacion})` : ''}</option>
+                ))}
+              </select>
+              <p className="text-[10px] text-blue-600 mt-2 font-medium">Al seleccionar un cliente, este expediente aparecerá dentro de su portafolio en el Directorio.</p>
+            </div>
+          )}
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6 pb-20">
-          
-          {/* NUEVA SECCIÓN: ASIGNACIÓN AL CLIENTE (CRM) */}
-          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 md:p-8 rounded-2xl shadow-sm border border-blue-100">
-            <h2 className="text-lg font-black text-blue-900 pb-3 mb-4 flex items-center gap-2">
-              <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
-              Asignación del CRM (Directorio de Clientes)
-            </h2>
-            
-            {clienteIdUrl ? (
-              // Si vino desde la carpeta, mostramos la píldora bonita bloqueada
-              <div className="bg-white p-4 rounded-xl border border-blue-200 flex items-center justify-between">
+        {/* SECCIÓN 1: Identificación */}
+        <div className="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+          <h2 className="text-lg font-bold text-slate-800 border-b border-slate-100 pb-3 mb-5 flex items-center gap-2">
+            <span className="bg-blue-100 text-blue-700 w-6 h-6 rounded-full flex items-center justify-center text-xs">1</span> 
+            Identificación del Proceso
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div className="md:col-span-2">
+              <label className="block text-xs font-bold text-slate-600 mb-1">Número de Radicado (21 dígitos)</label>
+              <input type="text" name="radicado" value={formData.radicado} onChange={handleChange} className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition-all" placeholder="Ej. 11001400301720240012300" />
+            </div>
+            <div className="md:col-span-2">
+              <label className="block text-xs font-bold text-slate-600 mb-1">Despacho Judicial</label>
+              <input type="text" name="juzgado" value={formData.juzgado} onChange={handleChange} className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition-all" placeholder="Ej. Juzgado 17 Civil del Circuito de Bogotá" />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-600 mb-1">Ciudad / Municipio</label>
+              <input type="text" name="ciudad" value={formData.ciudad} onChange={handleChange} className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition-all" placeholder="Ej. Bogotá D.C." />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-600 mb-1">Área del Derecho</label>
+              <select name="areaDerecho" value={formData.areaDerecho} onChange={handleChange} className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition-all bg-white cursor-pointer">
+                <option value="Civil">Civil</option>
+                <option value="Laboral">Laboral</option>
+                <option value="Familia">Familia</option>
+                <option value="Administrativo">Administrativo</option>
+                <option value="Penal">Penal</option>
+                <option value="Disciplinario">Disciplinario</option>
+                <option value="Otro">Otro</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-600 mb-1">Clase de Proceso</label>
+              <input type="text" name="claseProceso" value={formData.claseProceso} onChange={handleChange} className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition-all" placeholder="Ej. Ejecutivo Singular, Ordinario..." />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-600 mb-1">Estado Interno</label>
+              <select name="estadoInterno" value={formData.estadoInterno} onChange={handleChange} className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition-all bg-white cursor-pointer">
+                <option value="Activo">Activo</option>
+                <option value="Suspendido">Suspendido</option>
+                <option value="En Apelación">En Apelación</option>
+                <option value="Terminado">Terminado</option>
+                <option value="Archivado">Archivado</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        {/* SECCIÓN 2: Partes Procesales */}
+        <div className="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+          <h2 className="text-lg font-bold text-slate-800 border-b border-slate-100 pb-3 mb-5 flex items-center gap-2">
+            <span className="bg-blue-100 text-blue-700 w-6 h-6 rounded-full flex items-center justify-center text-xs">2</span> 
+            Partes Procesales
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div>
+              <label className="block text-xs font-bold text-slate-600 mb-1">Demandante / Accionante <span className="text-red-500">*</span></label>
+              <input type="text" name="demandante" value={formData.demandante} onChange={handleChange} required className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition-all bg-blue-50/30" placeholder="Nombre completo o Razón Social" />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-600 mb-1">Identificación Demandante</label>
+              <input type="text" name="idDemandante" value={formData.idDemandante} onChange={handleChange} className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition-all" placeholder="C.C. o NIT" />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-600 mb-1">Demandado / Accionado <span className="text-red-500">*</span></label>
+              <input type="text" name="demandado" value={formData.demandado} onChange={handleChange} required className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition-all bg-red-50/30" placeholder="Nombre completo o Razón Social" />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-600 mb-1">Identificación Demandado</label>
+              <input type="text" name="idDemandado" value={formData.idDemandado} onChange={handleChange} className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition-all" placeholder="C.C. o NIT" />
+            </div>
+            <div className="md:col-span-2">
+              <label className="block text-xs font-bold text-slate-600 mb-1">Nuestra Calidad Procesal</label>
+              <select name="calidadProcesal" value={formData.calidadProcesal} onChange={handleChange} className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition-all bg-white cursor-pointer">
+                <option value="Apoderado Demandante">Apoderado Demandante</option>
+                <option value="Apoderado Demandada">Apoderado Parte Demandada</option>
+                <option value="Llamado en Garantía">Llamado en Garantía</option>
+                <option value="Litisconsorte">Litisconsorte</option>
+                <option value="Otro">Otro</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        {/* SECCIÓN 3: Financieros */}
+        <div className="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+          <h2 className="text-lg font-bold text-slate-800 border-b border-slate-100 pb-3 mb-5 flex items-center gap-2">
+            <span className="bg-blue-100 text-blue-700 w-6 h-6 rounded-full flex items-center justify-center text-xs">3</span> 
+            Datos Financieros y Honorarios
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div>
+              <label className="block text-xs font-bold text-slate-600 mb-1">Cuantía Estimada (COP)</label>
+              <input type="number" name="cuantia" value={formData.cuantia} onChange={handleChange} className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition-all" placeholder="Ej. 50000000" />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-600 mb-1">Capital Base / Suerte Principal (COP)</label>
+              <input type="number" name="capitalBase" value={formData.capitalBase} onChange={handleChange} className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition-all" placeholder="Ej. 45000000" />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-600 mb-1">Honorarios Pactados</label>
+              <input type="text" name="honorariosPactados" value={formData.honorariosPactados} onChange={handleChange} className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition-all" placeholder="Ej. 20% Cuota Litis o $5.000.000" />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-600 mb-1">Saldo de Honorarios Pendiente (COP)</label>
+              <input type="number" name="saldoHonorarios" value={formData.saldoHonorarios} onChange={handleChange} className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition-all" placeholder="Ej. 2500000" />
+            </div>
+          </div>
+        </div>
+
+        {/* SECCIÓN 4: Contactos */}
+        <div className="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+          <h2 className="text-lg font-bold text-slate-800 border-b border-slate-100 pb-3 mb-5 flex items-center gap-2">
+            <span className="bg-blue-100 text-blue-700 w-6 h-6 rounded-full flex items-center justify-center text-xs">4</span> 
+            Directorio de Contactos
+          </h2>
+          <div className="space-y-6">
+            <div>
+              <h3 className="text-sm font-bold text-slate-700 mb-3">Datos de Nuestro Cliente</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div>
-                  <p className="text-[10px] text-blue-500 font-bold uppercase tracking-wider mb-0.5">Expediente asociado a:</p>
-                  <p className="font-bold text-slate-800 text-lg">{nombreClienteUrl}</p>
+                  <label className="block text-xs font-bold text-slate-600 mb-1">Teléfono / WhatsApp</label>
+                  <input type="text" name="telCliente" value={formData.telCliente} onChange={handleChange} className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition-all" placeholder="Ej. 300 123 4567" />
                 </div>
-                <div className="w-10 h-10 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center">
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"/></svg>
+                <div>
+                  <label className="block text-xs font-bold text-slate-600 mb-1">Correo Electrónico</label>
+                  <input type="email" name="emailCliente" value={formData.emailCliente} onChange={handleChange} className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition-all" placeholder="cliente@correo.com" />
                 </div>
-              </div>
-            ) : (
-              // Si entró desde "Nuevo Caso" general, mostramos el desplegable
-              <div>
-                <label className="block text-xs font-bold text-blue-800 mb-2">Selecciona al cliente propietario de este proceso</label>
-                <select name="clienteId" value={formData.clienteId} onChange={handleChange} className="w-full border border-blue-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-600 outline-none bg-white cursor-pointer font-medium text-slate-800 shadow-sm">
-                  <option value="">-- No vincular a ningún cliente por ahora --</option>
-                  {clientesDisponibles.map(cli => (
-                    <option key={cli.id} value={cli.id}>{cli.nombre} {cli.identificacion ? `(${cli.identificacion})` : ''}</option>
-                  ))}
-                </select>
-                <p className="text-[10px] text-blue-600 mt-2 font-medium">Al seleccionar un cliente, este expediente aparecerá dentro de su portafolio en el Directorio.</p>
-              </div>
-            )}
-          </div>
-
-          {/* SECCIÓN 1: Identificación */}
-          <div className="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
-            <h2 className="text-lg font-bold text-slate-800 border-b border-slate-100 pb-3 mb-5 flex items-center gap-2">
-              <span className="bg-blue-100 text-blue-700 w-6 h-6 rounded-full flex items-center justify-center text-xs">1</span> 
-              Identificación del Proceso
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              <div className="md:col-span-2">
-                <label className="block text-xs font-bold text-slate-600 mb-1">Número de Radicado (21 dígitos)</label>
-                <input type="text" name="radicado" value={formData.radicado} onChange={handleChange} className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition-all" placeholder="Ej. 11001400301720240012300" />
-              </div>
-              <div className="md:col-span-2">
-                <label className="block text-xs font-bold text-slate-600 mb-1">Despacho Judicial</label>
-                <input type="text" name="juzgado" value={formData.juzgado} onChange={handleChange} className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition-all" placeholder="Ej. Juzgado 17 Civil del Circuito de Bogotá" />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-600 mb-1">Ciudad / Municipio</label>
-                <input type="text" name="ciudad" value={formData.ciudad} onChange={handleChange} className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition-all" placeholder="Ej. Bogotá D.C." />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-600 mb-1">Área del Derecho</label>
-                <select name="areaDerecho" value={formData.areaDerecho} onChange={handleChange} className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition-all bg-white cursor-pointer">
-                  <option value="Civil">Civil</option>
-                  <option value="Laboral">Laboral</option>
-                  <option value="Familia">Familia</option>
-                  <option value="Administrativo">Administrativo</option>
-                  <option value="Penal">Penal</option>
-                  <option value="Disciplinario">Disciplinario</option>
-                  <option value="Otro">Otro</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-600 mb-1">Clase de Proceso</label>
-                <input type="text" name="claseProceso" value={formData.claseProceso} onChange={handleChange} className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition-all" placeholder="Ej. Ejecutivo Singular, Ordinario..." />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-600 mb-1">Estado Interno</label>
-                <select name="estadoInterno" value={formData.estadoInterno} onChange={handleChange} className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition-all bg-white cursor-pointer">
-                  <option value="Activo">Activo</option>
-                  <option value="Suspendido">Suspendido</option>
-                  <option value="En Apelación">En Apelación</option>
-                  <option value="Terminado">Terminado</option>
-                  <option value="Archivado">Archivado</option>
-                </select>
-              </div>
-            </div>
-          </div>
-
-          {/* SECCIÓN 2: Partes Procesales */}
-          <div className="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
-            <h2 className="text-lg font-bold text-slate-800 border-b border-slate-100 pb-3 mb-5 flex items-center gap-2">
-              <span className="bg-blue-100 text-blue-700 w-6 h-6 rounded-full flex items-center justify-center text-xs">2</span> 
-              Partes Procesales
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              <div>
-                <label className="block text-xs font-bold text-slate-600 mb-1">Demandante / Accionante <span className="text-red-500">*</span></label>
-                <input type="text" name="demandante" value={formData.demandante} onChange={handleChange} required className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition-all bg-blue-50/30" placeholder="Nombre completo o Razón Social" />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-600 mb-1">Identificación Demandante</label>
-                <input type="text" name="idDemandante" value={formData.idDemandante} onChange={handleChange} className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition-all" placeholder="C.C. o NIT" />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-600 mb-1">Demandado / Accionado <span className="text-red-500">*</span></label>
-                <input type="text" name="demandado" value={formData.demandado} onChange={handleChange} required className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition-all bg-red-50/30" placeholder="Nombre completo o Razón Social" />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-600 mb-1">Identificación Demandado</label>
-                <input type="text" name="idDemandado" value={formData.idDemandado} onChange={handleChange} className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition-all" placeholder="C.C. o NIT" />
-              </div>
-              <div className="md:col-span-2">
-                <label className="block text-xs font-bold text-slate-600 mb-1">Nuestra Calidad Procesal</label>
-                <select name="calidadProcesal" value={formData.calidadProcesal} onChange={handleChange} className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition-all bg-white cursor-pointer">
-                  <option value="Apoderado Demandante">Apoderado Demandante</option>
-                  <option value="Apoderado Demandada">Apoderado Parte Demandada</option>
-                  <option value="Llamado en Garantía">Llamado en Garantía</option>
-                  <option value="Litisconsorte">Litisconsorte</option>
-                  <option value="Otro">Otro</option>
-                </select>
-              </div>
-            </div>
-          </div>
-
-          {/* SECCIÓN 3: Financieros */}
-          <div className="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
-            <h2 className="text-lg font-bold text-slate-800 border-b border-slate-100 pb-3 mb-5 flex items-center gap-2">
-              <span className="bg-blue-100 text-blue-700 w-6 h-6 rounded-full flex items-center justify-center text-xs">3</span> 
-              Datos Financieros y Honorarios
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              <div>
-                <label className="block text-xs font-bold text-slate-600 mb-1">Cuantía Estimada (COP)</label>
-                <input type="number" name="cuantia" value={formData.cuantia} onChange={handleChange} className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition-all" placeholder="Ej. 50000000" />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-600 mb-1">Capital Base / Suerte Principal (COP)</label>
-                <input type="number" name="capitalBase" value={formData.capitalBase} onChange={handleChange} className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition-all" placeholder="Ej. 45000000" />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-600 mb-1">Honorarios Pactados</label>
-                <input type="text" name="honorariosPactados" value={formData.honorariosPactados} onChange={handleChange} className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition-all" placeholder="Ej. 20% Cuota Litis o $5.000.000" />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-600 mb-1">Saldo de Honorarios Pendiente (COP)</label>
-                <input type="number" name="saldoHonorarios" value={formData.saldoHonorarios} onChange={handleChange} className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition-all" placeholder="Ej. 2500000" />
-              </div>
-            </div>
-          </div>
-
-          {/* SECCIÓN 4: Contactos */}
-          <div className="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
-            <h2 className="text-lg font-bold text-slate-800 border-b border-slate-100 pb-3 mb-5 flex items-center gap-2">
-              <span className="bg-blue-100 text-blue-700 w-6 h-6 rounded-full flex items-center justify-center text-xs">4</span> 
-              Directorio de Contactos
-            </h2>
-            <div className="space-y-6">
-              <div>
-                <h3 className="text-sm font-bold text-slate-700 mb-3">Datos de Nuestro Cliente</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-600 mb-1">Teléfono / WhatsApp</label>
-                    <input type="text" name="telCliente" value={formData.telCliente} onChange={handleChange} className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition-all" placeholder="Ej. 300 123 4567" />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-slate-600 mb-1">Correo Electrónico</label>
-                    <input type="email" name="emailCliente" value={formData.emailCliente} onChange={handleChange} className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition-all" placeholder="cliente@correo.com" />
-                  </div>
-                  <div className="md:col-span-2">
-                    <label className="block text-xs font-bold text-slate-600 mb-1">Dirección Física</label>
-                    <input type="text" name="dirCliente" value={formData.dirCliente} onChange={handleChange} className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition-all" placeholder="Dirección completa" />
-                  </div>
-                  <div className="md:col-span-2">
-                    <label className="block text-xs font-bold text-slate-600 mb-1">Notas de Contacto</label>
-                    <input type="text" name="notasContacto" value={formData.notasContacto} onChange={handleChange} className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition-all" placeholder="Ej. Llamar solo en las mañanas..." />
-                  </div>
+                <div className="md:col-span-2">
+                  <label className="block text-xs font-bold text-slate-600 mb-1">Dirección Física</label>
+                  <input type="text" name="dirCliente" value={formData.dirCliente} onChange={handleChange} className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition-all" placeholder="Dirección completa" />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-xs font-bold text-slate-600 mb-1">Notas de Contacto</label>
+                  <input type="text" name="notasContacto" value={formData.notasContacto} onChange={handleChange} className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition-all" placeholder="Ej. Llamar solo en las mañanas..." />
                 </div>
               </div>
-              <div className="pt-4 border-t border-slate-100">
-                <h3 className="text-sm font-bold text-slate-700 mb-3">Inteligencia Procesal (Contraparte)</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                  <div className="md:col-span-2">
-                    <label className="block text-xs font-bold text-slate-600 mb-1">Abogado Titular Contraparte</label>
-                    <input type="text" name="abogadoContraparte" value={formData.abogadoContraparte} onChange={handleChange} className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition-all" placeholder="Nombre del apoderado" />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-slate-600 mb-1">Correo de Notificación Judicial</label>
-                    <input type="email" name="emailContraparte" value={formData.emailContraparte} onChange={handleChange} className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition-all" placeholder="abogado@correo.com" />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-slate-600 mb-1">Teléfono Contraparte</label>
-                    <input type="text" name="telContraparte" value={formData.telContraparte} onChange={handleChange} className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition-all" placeholder="Para explorar conciliaciones" />
-                  </div>
+            </div>
+            <div className="pt-4 border-t border-slate-100">
+              <h3 className="text-sm font-bold text-slate-700 mb-3">Inteligencia Procesal (Contraparte)</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div className="md:col-span-2">
+                  <label className="block text-xs font-bold text-slate-600 mb-1">Abogado Titular Contraparte</label>
+                  <input type="text" name="abogadoContraparte" value={formData.abogadoContraparte} onChange={handleChange} className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition-all" placeholder="Nombre del apoderado" />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-600 mb-1">Correo de Notificación Judicial</label>
+                  <input type="email" name="emailContraparte" value={formData.emailContraparte} onChange={handleChange} className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition-all" placeholder="abogado@correo.com" />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-600 mb-1">Teléfono Contraparte</label>
+                  <input type="text" name="telContraparte" value={formData.telContraparte} onChange={handleChange} className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition-all" placeholder="Para explorar conciliaciones" />
                 </div>
               </div>
             </div>
@@ -310,7 +304,19 @@ export default function NuevoExpedientePage() {
             </button>
           </div>
 
-        </form>
+      </form>
+    </>
+  );
+}
+
+// Componente principal que exporta la página y envuelve el formulario en Suspense
+export default function NuevoExpedientePage() {
+  return (
+    <div className="min-h-screen bg-gray-50/50 p-4 md:p-8 font-sans">
+      <div className="max-w-4xl mx-auto space-y-6">
+        <Suspense fallback={<div className="p-8 text-center text-slate-500 font-bold">Cargando formulario...</div>}>
+          <FormularioExpediente />
+        </Suspense>
       </div>
     </div>
   );
