@@ -65,6 +65,12 @@ model Caso {
   liquidaciones       Liquidacion[]
 
   abonos        Abono[]
+
+  // Campos del Radar Judicial
+  radarUltimaConsulta  DateTime?
+  radarUltimaActuacion String?
+  radarFechaActuacion  DateTime?
+  radarAlerta          Boolean   @default(false)
 }
 
 model Liquidacion {
