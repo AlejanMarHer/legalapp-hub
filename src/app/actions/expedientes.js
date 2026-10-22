@@ -9,7 +9,19 @@ if (process.env.NODE_ENV !== 'production') global.prisma = prisma;
 // Helper para fechas
 const parseDate = (d) => d ? new Date(d) : null;
 
-// 1. Crear Nuevo Expediente
+// NUEVO: Función para traer los clientes y llenar el select del formulario
+export async function obtenerListaClientesSelect() {
+  const user = await currentUser();
+  if (!user) throw new Error("Usuario no autenticado");
+
+  return await prisma.cliente.findMany({
+    where: { userId: user.id },
+    select: { id: true, nombre: true, identificacion: true },
+    orderBy: { nombre: 'asc' }
+  });
+}
+
+// 1. Crear Nuevo Expediente (Actualizado con clienteId)
 export async function guardarNuevoExpediente(data) {
   const user = await currentUser();
   if (!user) throw new Error("Usuario no autenticado");
@@ -17,6 +29,7 @@ export async function guardarNuevoExpediente(data) {
   const nuevoCaso = await prisma.caso.create({
     data: {
       userId: user.id,
+      clienteId: data.clienteId || null, // VINCULACIÓN CON EL CLIENTE
       radicado: data.radicado || null,
       juzgado: data.juzgado || null,
       ciudad: data.ciudad || "Bogotá D.C.",
@@ -70,6 +83,7 @@ export async function actualizarExpediente(id, data) {
   const casoActualizado = await prisma.caso.update({
     where: { id },
     data: {
+      clienteId: data.clienteId || null, // Permite reasignar cliente si se equivocó
       radicado: data.radicado || null,
       juzgado: data.juzgado || null,
       ciudad: data.ciudad || "Bogotá D.C.",
@@ -103,6 +117,7 @@ export async function actualizarExpediente(id, data) {
 
   return casoActualizado.id;
 }
+
 // 4. Resolver Vencimiento y Registrar Gestión
 export async function resolverVencimiento(id, detallesGestion) {
   const user = await currentUser();

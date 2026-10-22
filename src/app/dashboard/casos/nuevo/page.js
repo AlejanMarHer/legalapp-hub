@@ -1,16 +1,22 @@
 "use client";
 
-import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { guardarNuevoExpediente } from '../../../actions/expedientes';
+import { guardarNuevoExpediente, obtenerListaClientesSelect } from '../../../actions/expedientes';
 
 export default function NuevoExpedientePage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [isSaving, setIsSaving] = useState(false);
+  const [clientesDisponibles, setClientesDisponibles] = useState([]);
   
-  // Estado inicial con todos los campos de nuestro nuevo esquema
+  // Atrapamos la magia de la URL (Si vienes del Perfil del Cliente)
+  const clienteIdUrl = searchParams.get('clienteId');
+  const nombreClienteUrl = searchParams.get('nombre');
+
   const [formData, setFormData] = useState({
+    clienteId: clienteIdUrl || '', // NUEVO: Vinculación
     radicado: '', juzgado: '', ciudad: 'Bogotá D.C.', areaDerecho: 'Civil', claseProceso: '', estadoInterno: 'Activo',
     demandante: '', idDemandante: '', demandado: '', idDemandado: '', calidadProcesal: 'Apoderado Demandante',
     cuantia: '', capitalBase: '', honorariosPactados: '', saldoHonorarios: '',
@@ -19,6 +25,19 @@ export default function NuevoExpedientePage() {
     fechaPresentacion: '', fechaAdmision: '', fechaVencimiento: '', descVencimiento: '',
     resumenHechos: '', apuntesPrivados: ''
   });
+
+  // Traer los clientes de la base de datos para el desplegable
+  useEffect(() => {
+    async function cargarClientes() {
+      try {
+        const lista = await obtenerListaClientesSelect();
+        setClientesDisponibles(lista);
+      } catch (error) {
+        console.error("Error cargando clientes");
+      }
+    }
+    cargarClientes();
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -41,9 +60,9 @@ export default function NuevoExpedientePage() {
     <div className="min-h-screen bg-gray-50/50 p-4 md:p-8 font-sans">
       <div className="max-w-4xl mx-auto space-y-6">
         
-        <Link href="/dashboard/casos" className="text-blue-600 flex items-center gap-2 hover:underline font-medium text-sm w-fit">
+        <Link href={clienteIdUrl ? `/dashboard/clientes/${clienteIdUrl}` : "/dashboard/casos"} className="text-blue-600 flex items-center gap-2 hover:underline font-medium text-sm w-fit">
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
-          Volver a mis expedientes
+          {clienteIdUrl ? `Volver al perfil de ${nombreClienteUrl}` : 'Volver a mis expedientes'}
         </Link>
 
         <div>
@@ -53,6 +72,39 @@ export default function NuevoExpedientePage() {
 
         <form onSubmit={handleSubmit} className="space-y-6 pb-20">
           
+          {/* NUEVA SECCIÓN: ASIGNACIÓN AL CLIENTE (CRM) */}
+          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 md:p-8 rounded-2xl shadow-sm border border-blue-100">
+            <h2 className="text-lg font-black text-blue-900 pb-3 mb-4 flex items-center gap-2">
+              <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+              Asignación del CRM (Directorio de Clientes)
+            </h2>
+            
+            {clienteIdUrl ? (
+              // Si vino desde la carpeta, mostramos la píldora bonita bloqueada
+              <div className="bg-white p-4 rounded-xl border border-blue-200 flex items-center justify-between">
+                <div>
+                  <p className="text-[10px] text-blue-500 font-bold uppercase tracking-wider mb-0.5">Expediente asociado a:</p>
+                  <p className="font-bold text-slate-800 text-lg">{nombreClienteUrl}</p>
+                </div>
+                <div className="w-10 h-10 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"/></svg>
+                </div>
+              </div>
+            ) : (
+              // Si entró desde "Nuevo Caso" general, mostramos el desplegable
+              <div>
+                <label className="block text-xs font-bold text-blue-800 mb-2">Selecciona al cliente propietario de este proceso</label>
+                <select name="clienteId" value={formData.clienteId} onChange={handleChange} className="w-full border border-blue-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-600 outline-none bg-white cursor-pointer font-medium text-slate-800 shadow-sm">
+                  <option value="">-- No vincular a ningún cliente por ahora --</option>
+                  {clientesDisponibles.map(cli => (
+                    <option key={cli.id} value={cli.id}>{cli.nombre} {cli.identificacion ? `(${cli.identificacion})` : ''}</option>
+                  ))}
+                </select>
+                <p className="text-[10px] text-blue-600 mt-2 font-medium">Al seleccionar un cliente, este expediente aparecerá dentro de su portafolio en el Directorio.</p>
+              </div>
+            )}
+          </div>
+
           {/* SECCIÓN 1: Identificación */}
           <div className="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
             <h2 className="text-lg font-bold text-slate-800 border-b border-slate-100 pb-3 mb-5 flex items-center gap-2">
