@@ -3,6 +3,7 @@ import { currentUser } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
 import { PrismaClient } from '@prisma/client';
 import Link from 'next/link';
+import BotonEditarCliente from './BotonEditarCliente';
 
 export const dynamic = 'force-dynamic';
 
@@ -57,7 +58,16 @@ export default async function ClienteDetallePage({ params }) {
             </div>
           </div>
 
-          <div className="flex w-full md:w-auto mt-4 md:mt-0">
+          <div className="flex flex-col md:flex-row w-full md:w-auto mt-4 md:mt-0 gap-3">
+            <BotonEditarCliente cliente={cliente} />
+            <Link 
+              href={`/dashboard/casos/nuevo?clienteId=${cliente.id}&nombre=${encodeURIComponent(cliente.nombre)}`}
+              className="w-full md:w-auto bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 px-6 rounded-xl shadow-md transition-all hover:-translate-y-0.5 flex items-center justify-center gap-2 text-sm"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"/></svg>
+              Nuevo Expediente
+            </Link>
+          </div>
             {/* Preparado para el futuro: Enviar ID del cliente por URL al crear un caso */}
             <Link 
               href={`/dashboard/casos/nuevo?clienteId=${cliente.id}&nombre=${encodeURIComponent(cliente.nombre)}`}

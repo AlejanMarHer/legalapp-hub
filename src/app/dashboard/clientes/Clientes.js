@@ -201,3 +201,24 @@ export default function ClientesCliente({ clientesIniciales }) {
     </div>
   );
 }
+
+// 4. Actualizar un cliente existente
+export async function actualizarCliente(id, data) {
+  const user = await currentUser();
+  if (!user) throw new Error("No autenticado");
+
+  const cliente = await prisma.cliente.findUnique({ where: { id } });
+  if (!cliente || cliente.userId !== user.id) throw new Error("No autorizado");
+
+  return await prisma.cliente.update({
+    where: { id },
+    data: {
+      nombre: data.nombre,
+      identificacion: data.identificacion || null,
+      email: data.email || null,
+      telefono: data.telefono || null,
+      direccion: data.direccion || null,
+      notas: data.notas || null,
+    }
+  });
+}
