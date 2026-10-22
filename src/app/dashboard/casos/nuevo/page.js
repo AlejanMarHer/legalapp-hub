@@ -1,5 +1,3 @@
-// Actualizacion forzada para Vercel
-
 "use client";
 
 import React, { useState, useEffect, Suspense } from 'react';
@@ -7,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { guardarNuevoExpediente, obtenerListaClientesSelect } from '../../../actions/expedientes';
 
-// Componente interno que contiene la lógica de los parámetros de búsqueda
+// Componente interno que contiene la lógica
 function FormularioExpediente() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -58,7 +56,7 @@ function FormularioExpediente() {
   };
 
   return (
-    <>
+    <div className="w-full">
       <Link href={clienteIdUrl ? `/dashboard/clientes/${clienteIdUrl}` : "/dashboard/casos"} className="text-blue-600 flex items-center gap-2 hover:underline font-medium text-sm w-fit mb-6">
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
         {clienteIdUrl ? `Volver al perfil de ${nombreClienteUrl}` : 'Volver a mis expedientes'}
@@ -307,7 +305,7 @@ function FormularioExpediente() {
           </div>
 
       </form>
-    </>
+    </div>
   );
 }
 
