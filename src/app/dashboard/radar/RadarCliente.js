@@ -3,42 +3,76 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { sincronizarRadicado, limpiarAlertaRadar } from '@/app/actions/radar';
+import { guardarActualizacionRadar, limpiarAlertaRadar, marcarRadarFallido } from '@/app/actions/radar';
 
 export default function RadarCliente({ casos }) {
   const router = useRouter();
   const [procesandoId, setProcesandoId] = useState(null);
   const [barridoGlobal, setBarridoGlobal] = useState(false);
 
-  // Filtrar solo casos con radicado válido (23 dígitos)
   const casosRastreables = casos.filter(c => c.radicado && c.radicado.replace(/[^0-9]/g, '').length === 23);
   const casosConAlerta = casosRastreables.filter(c => c.radarAlerta).length;
 
-  const handleSincronizarUno = async (casoId) => {
-    setProcesandoId(casoId);
-    const resultado = await sincronizarRadicado(casoId);
+  // Lógica principal ejecutada en el navegador del usuario (Client-Side)
+  const ejecutarSincronizacionCliente = async (caso) => {
+    const radicadoLimpio = caso.radicado.replace(/[^0-9]/g, '');
+    try {
+      // 1. Buscar ID del proceso
+      const urlBusqueda = `https://consultaprocesos.ramajudicial.gov.co/api/v2/Procesos/Consulta/NumeroRadicacion?numero=${radicadoLimpio}&SoloActivos=false&despacho=null`;
+      const resBusqueda = await fetch(urlBusqueda);
+      if (!resBusqueda.ok) throw new Error("Fallo API Busqueda");
+      
+      const dataBusqueda = await resBusqueda.json();
+      if (!dataBusqueda.procesos || dataBusqueda.procesos.length === 0) {
+        return { exito: false, mensaje: "El radicado no existe en la Rama Judicial." };
+      }
+
+      // 2. Buscar Actuaciones
+      const idProceso = dataBusqueda.procesos[0].idProceso;
+      const urlActuaciones = `https://consultaprocesos.ramajudicial.gov.co/api/v2/Proceso/Actuaciones/${idProceso}`;
+      const resActuaciones = await fetch(urlActuaciones);
+      if (!resActuaciones.ok) throw new Error("Fallo API Actuaciones");
+
+      const dataActuaciones = await resActuaciones.json();
+      if (!dataActuaciones.actuaciones || dataActuaciones.actuaciones.length === 0) {
+        return { exito: false, mensaje: "El proceso no tiene actuaciones." };
+      }
+
+      // 3. Extraer la última actuación y enviar al servidor para guardar
+      const ultimaActuacion = dataActuaciones.actuaciones[0];
+      const nombreAct = ultimaActuacion.actuacion || ultimaActuacion.anotacion || "Actuación registrada";
+      const fechaAct = ultimaActuacion.fechaActuacion;
+
+      return await guardarActualizacionRadar(caso.id, nombreAct, fechaAct);
+
+    } catch (error) {
+      await marcarRadarFallido(caso.id);
+      return { exito: false, mensaje: "No se pudo conectar con la Rama. Intenta más tarde." };
+    }
+  };
+
+  const handleSincronizarUno = async (caso) => {
+    setProcesandoId(caso.id);
+    const resultado = await ejecutarSincronizacionCliente(caso);
     alert(resultado.mensaje);
     setProcesandoId(null);
     router.refresh();
   };
 
   const handleBarridoGlobal = async () => {
-    if (!window.confirm(`¿Iniciar escaneo de ${casosRastreables.length} procesos? Esto puede tardar un poco.`)) return;
+    if (!window.confirm(`¿Iniciar escaneo de ${casosRastreables.length} procesos?`)) return;
     setBarridoGlobal(true);
     let nuevos = 0;
     
     for (const caso of casosRastreables) {
-      try {
-        const res = await sincronizarRadicado(caso.id);
-        if (res.nueva) nuevos++;
-        // Pequeña pausa para no saturar la Rama Judicial (anti-bloqueo)
-        await new Promise(r => setTimeout(r, 1000));
-      } catch (e) {
-        console.log("Fallo en caso", caso.radicado);
-      }
+      setProcesandoId(caso.id);
+      const res = await ejecutarSincronizacionCliente(caso);
+      if (res.exito && res.nueva) nuevos++;
+      await new Promise(r => setTimeout(r, 1500)); // Pausa para no ser bloqueados
     }
     
     alert(`Barrido completado. Se encontraron ${nuevos} actuaciones nuevas.`);
+    setProcesandoId(null);
     setBarridoGlobal(false);
     router.refresh();
   };
@@ -54,14 +88,14 @@ export default function RadarCliente({ casos }) {
     <div className="min-h-screen bg-slate-900 p-4 md:p-8 font-sans">
       <div className="max-w-6xl mx-auto space-y-6">
         
-        {/* Encabezado Dark Mode (Estilo Radar) */}
+        {/* Encabezado Dark Mode */}
         <div className="bg-slate-800 p-6 md:p-8 rounded-3xl shadow-xl border border-slate-700 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative overflow-hidden">
           <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500 opacity-5 rounded-full blur-3xl -mr-20 -mt-20"></div>
           
           <div className="relative z-10">
             <div className="flex items-center gap-3 mb-2">
               <div className="w-3 h-3 rounded-full bg-emerald-400 animate-pulse"></div>
-              <span className="text-emerald-400 text-xs font-black uppercase tracking-widest">Conectado a Tyba / CEAC</span>
+              <span className="text-emerald-400 text-xs font-black uppercase tracking-widest">Conectado Vía Cliente Local</span>
             </div>
             <h1 className="text-2xl md:text-3xl font-black text-white tracking-tight">Radar de la Rama Judicial</h1>
             <p className="text-slate-400 font-medium mt-1">Monitoreo automatizado de actuaciones y estados en juzgados.</p>
@@ -76,7 +110,7 @@ export default function RadarCliente({ casos }) {
               disabled={barridoGlobal || casosRastreables.length === 0}
               className="flex-1 md:flex-none bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-slate-900 font-black py-3.5 px-6 rounded-xl shadow-lg shadow-emerald-500/20 transition-all flex items-center justify-center gap-2 text-sm"
             >
-              {barridoGlobal ? 'Escaneando Servidores...' : 'Iniciar Barrido Global'}
+              {barridoGlobal ? 'Escaneando...' : 'Iniciar Barrido Global'}
               {!barridoGlobal && <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>}
             </button>
           </div>
@@ -139,7 +173,7 @@ export default function RadarCliente({ casos }) {
 
                   <div className="flex flex-col gap-2 shrink-0">
                     <button 
-                      onClick={() => handleSincronizarUno(caso.id)}
+                      onClick={() => handleSincronizarUno(caso)}
                       disabled={procesandoId === caso.id || barridoGlobal}
                       className="bg-slate-700 hover:bg-slate-600 text-white font-bold py-2.5 px-4 rounded-lg text-sm transition"
                     >
