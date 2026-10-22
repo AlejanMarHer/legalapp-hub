@@ -15,7 +15,7 @@ export async function obtenerClientes() {
     where: { userId: user.id },
     include: {
       _count: {
-        select: { casos: true } // Esto contará cuántos expedientes tiene asignados
+        select: { casos: true } 
       }
     },
     orderBy: { createdAt: 'desc' }
@@ -48,7 +48,6 @@ export async function eliminarCliente(id) {
   const cliente = await prisma.cliente.findUnique({ where: { id } });
   if (!cliente || cliente.userId !== user.id) throw new Error("No autorizado");
 
-  // OJO: Por seguridad, solo dejamos eliminar si no tiene expedientes asociados
   const expedientesAsociados = await prisma.caso.count({ where: { clienteId: id } });
   if (expedientesAsociados > 0) {
     throw new Error("No puedes eliminar un cliente que tiene expedientes asociados. Borra primero los expedientes.");
@@ -56,5 +55,26 @@ export async function eliminarCliente(id) {
 
   return await prisma.cliente.delete({
     where: { id }
+  });
+}
+
+// 4. Actualizar un cliente existente
+export async function actualizarCliente(id, data) {
+  const user = await currentUser();
+  if (!user) throw new Error("No autenticado");
+
+  const cliente = await prisma.cliente.findUnique({ where: { id } });
+  if (!cliente || cliente.userId !== user.id) throw new Error("No autorizado");
+
+  return await prisma.cliente.update({
+    where: { id },
+    data: {
+      nombre: data.nombre,
+      identificacion: data.identificacion || null,
+      email: data.email || null,
+      telefono: data.telefono || null,
+      direccion: data.direccion || null,
+      notas: data.notas || null,
+    }
   });
 }
