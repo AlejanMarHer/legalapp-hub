@@ -5,7 +5,6 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { guardarNuevoExpediente, obtenerListaClientesSelect } from '../../../actions/expedientes';
 
-// Componente interno que contiene la lógica
 function FormularioExpediente() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -61,21 +60,16 @@ function FormularioExpediente() {
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
         {clienteIdUrl ? `Volver al perfil de ${nombreClienteUrl}` : 'Volver a mis expedientes'}
       </Link>
-
       <div className="mb-6">
         <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Radicar Nuevo Expediente</h1>
         <p className="text-slate-500 mt-1 text-sm">Ingresa los datos procesales para crear un nuevo registro completo en tu despacho virtual.</p>
       </div>
-
       <form onSubmit={handleSubmit} className="space-y-6 pb-20">
-        
-        {/* ASIGNACIÓN AL CLIENTE (CRM) */}
         <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 md:p-8 rounded-2xl shadow-sm border border-blue-100">
           <h2 className="text-lg font-black text-blue-900 pb-3 mb-4 flex items-center gap-2">
             <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
             Asignación del CRM (Directorio de Clientes)
           </h2>
-          
           {clienteIdUrl ? (
             <div className="bg-white p-4 rounded-xl border border-blue-200 flex items-center justify-between">
               <div>
@@ -99,8 +93,6 @@ function FormularioExpediente() {
             </div>
           )}
         </div>
-
-        {/* SECCIÓN 1: Identificación */}
         <div className="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
           <h2 className="text-lg font-bold text-slate-800 border-b border-slate-100 pb-3 mb-5 flex items-center gap-2">
             <span className="bg-blue-100 text-blue-700 w-6 h-6 rounded-full flex items-center justify-center text-xs">1</span> 
@@ -147,8 +139,6 @@ function FormularioExpediente() {
             </div>
           </div>
         </div>
-
-        {/* SECCIÓN 2: Partes Procesales */}
         <div className="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
           <h2 className="text-lg font-bold text-slate-800 border-b border-slate-100 pb-3 mb-5 flex items-center gap-2">
             <span className="bg-blue-100 text-blue-700 w-6 h-6 rounded-full flex items-center justify-center text-xs">2</span> 
@@ -183,8 +173,6 @@ function FormularioExpediente() {
             </div>
           </div>
         </div>
-
-        {/* SECCIÓN 3: Financieros */}
         <div className="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
           <h2 className="text-lg font-bold text-slate-800 border-b border-slate-100 pb-3 mb-5 flex items-center gap-2">
             <span className="bg-blue-100 text-blue-700 w-6 h-6 rounded-full flex items-center justify-center text-xs">3</span> 
@@ -209,8 +197,6 @@ function FormularioExpediente() {
             </div>
           </div>
         </div>
-
-        {/* SECCIÓN 4: Contactos */}
         <div className="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
           <h2 className="text-lg font-bold text-slate-800 border-b border-slate-100 pb-3 mb-5 flex items-center gap-2">
             <span className="bg-blue-100 text-blue-700 w-6 h-6 rounded-full flex items-center justify-center text-xs">4</span> 
@@ -256,60 +242,52 @@ function FormularioExpediente() {
               </div>
             </div>
           </div>
-
-          {/* SECCIÓN 5: Hitos */}
-          <div className="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
-            <h2 className="text-lg font-bold text-slate-800 border-b border-slate-100 pb-3 mb-5 flex items-center gap-2">
-              <span className="bg-blue-100 text-blue-700 w-6 h-6 rounded-full flex items-center justify-center text-xs">5</span> 
-              Hitos, Plazos y Observaciones
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        </div>
+        <div className="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+          <h2 className="text-lg font-bold text-slate-800 border-b border-slate-100 pb-3 mb-5 flex items-center gap-2">
+            <span className="bg-blue-100 text-blue-700 w-6 h-6 rounded-full flex items-center justify-center text-xs">5</span> 
+            Hitos, Plazos y Observaciones
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div>
+              <label className="block text-xs font-bold text-slate-600 mb-1">Fecha Presentación Demanda</label>
+              <input type="date" name="fechaPresentacion" value={formData.fechaPresentacion} onChange={handleChange} className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition-all bg-white cursor-pointer" />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-600 mb-1">Fecha Auto Admisorio / Mandamiento</label>
+              <input type="date" name="fechaAdmision" value={formData.fechaAdmision} onChange={handleChange} className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition-all bg-white cursor-pointer" />
+            </div>
+            <div className="md:col-span-2 bg-orange-50/50 p-5 rounded-xl border border-orange-100 mt-2 grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
               <div>
-                <label className="block text-xs font-bold text-slate-600 mb-1">Fecha Presentación Demanda</label>
-                <input type="date" name="fechaPresentacion" value={formData.fechaPresentacion} onChange={handleChange} className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition-all bg-white cursor-pointer" />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-600 mb-1">Fecha Auto Admisorio / Mandamiento</label>
-                <input type="date" name="fechaAdmision" value={formData.fechaAdmision} onChange={handleChange} className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition-all bg-white cursor-pointer" />
-              </div>
-              <div className="md:col-span-2 bg-orange-50/50 p-5 rounded-xl border border-orange-100 mt-2 grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
-                <div>
-                  <label className="block text-xs font-bold text-orange-800 mb-1">Próximo Vencimiento</label>
-                  <input type="date" name="fechaVencimiento" value={formData.fechaVencimiento} onChange={handleChange} className="w-full border border-orange-200 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-orange-500 outline-none bg-white text-orange-900 cursor-pointer" />
-                </div>
-                <div className="md:col-span-2">
-                  <label className="block text-xs font-bold text-orange-800 mb-1">Descripción del Vencimiento</label>
-                  <input type="text" name="descVencimiento" value={formData.descVencimiento} onChange={handleChange} className="w-full border border-orange-200 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-orange-500 outline-none bg-white text-orange-900" placeholder="Ej. Contestar excepciones de mérito" />
-                </div>
-              </div>
-              <div className="md:col-span-2 mt-2">
-                <label className="block text-xs font-bold text-slate-600 mb-1">Resumen de Hechos / Teoría del Caso</label>
-                <textarea name="resumenHechos" value={formData.resumenHechos} onChange={handleChange} rows="3" className="w-full border border-slate-300 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition-all resize-none" placeholder="Breve descripción fáctica del proceso..."></textarea>
+                <label className="block text-xs font-bold text-orange-800 mb-1">Próximo Vencimiento</label>
+                <input type="date" name="fechaVencimiento" value={formData.fechaVencimiento} onChange={handleChange} className="w-full border border-orange-200 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-orange-500 outline-none bg-white text-orange-900 cursor-pointer" />
               </div>
               <div className="md:col-span-2">
-                <label className="block text-xs font-bold text-slate-600 mb-1">Apuntes Privados y Estrategia</label>
-                <textarea name="apuntesPrivados" value={formData.apuntesPrivados} onChange={handleChange} rows="3" className="w-full border border-slate-300 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition-all resize-none bg-slate-50" placeholder="Notas internas exclusivas para el despacho..."></textarea>
+                <label className="block text-xs font-bold text-orange-800 mb-1">Descripción del Vencimiento</label>
+                <input type="text" name="descVencimiento" value={formData.descVencimiento} onChange={handleChange} className="w-full border border-orange-200 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-orange-500 outline-none bg-white text-orange-900" placeholder="Ej. Contestar excepciones de mérito" />
               </div>
             </div>
+            <div className="md:col-span-2 mt-2">
+              <label className="block text-xs font-bold text-slate-600 mb-1">Resumen de Hechos / Teoría del Caso</label>
+              <textarea name="resumenHechos" value={formData.resumenHechos} onChange={handleChange} rows="3" className="w-full border border-slate-300 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition-all resize-none" placeholder="Breve descripción fáctica del proceso..."></textarea>
+            </div>
+            <div className="md:col-span-2">
+              <label className="block text-xs font-bold text-slate-600 mb-1">Apuntes Privados y Estrategia</label>
+              <textarea name="apuntesPrivados" value={formData.apuntesPrivados} onChange={handleChange} rows="3" className="w-full border border-slate-300 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition-all resize-none bg-slate-50" placeholder="Notas internas exclusivas para el despacho..."></textarea>
+            </div>
           </div>
-
-          <div className="flex justify-end pt-4">
-            <button 
-              type="submit" 
-              disabled={isSaving} 
-              className="bg-[#1E3A8A] hover:bg-blue-800 text-white font-extrabold py-4 px-10 rounded-xl shadow-lg transition-all disabled:opacity-50 flex items-center gap-2"
-            >
-              {isSaving ? 'Guardando...' : 'GUARDAR EXPEDIENTE COMPLETO'}
-              {!isSaving && <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>}
-            </button>
-          </div>
-
+        </div>
+        <div className="flex justify-end pt-4">
+          <button type="submit" disabled={isSaving} className="bg-[#1E3A8A] hover:bg-blue-800 text-white font-extrabold py-4 px-10 rounded-xl shadow-lg transition-all disabled:opacity-50 flex items-center gap-2">
+            {isSaving ? 'Guardando...' : 'GUARDAR EXPEDIENTE COMPLETO'}
+            {!isSaving && <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>}
+          </button>
+        </div>
       </form>
     </div>
   );
 }
 
-// Componente principal que exporta la página y envuelve el formulario en Suspense
 export default function NuevoExpedientePage() {
   return (
     <div className="min-h-screen bg-gray-50/50 p-4 md:p-8 font-sans">
