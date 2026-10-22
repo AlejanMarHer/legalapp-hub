@@ -17,19 +17,29 @@ export async function guardarActualizacionRadar(casoId, nombreActuacion, fechaAc
   const esNueva = caso.radarUltimaActuacion !== nombreActuacion;
   const alerta = esNueva ? true : caso.radarAlerta;
 
+  // CONEXIÓN RADAR-EXPEDIENTE: Inyectar la novedad en la Bitácora
+  let nuevosApuntes = caso.apuntesPrivados || "";
+  if (esNueva) {
+    // Formateamos la fecha para que se vea bien en Colombia
+    const [año, mes, dia] = fechaActuacionTexto.split('-');
+    const notaRadar = `\n\n📌 [RADAR RAMA JUDICIAL - ${dia}/${mes}/${año}]: ${nombreActuacion}`;
+    nuevosApuntes = nuevosApuntes + notaRadar;
+  }
+
   await prisma.caso.update({
     where: { id: casoId },
     data: {
       radarUltimaConsulta: new Date(),
       radarUltimaActuacion: nombreActuacion,
       radarFechaActuacion: new Date(fechaActuacionTexto),
-      radarAlerta: alerta
+      radarAlerta: alerta,
+      apuntesPrivados: nuevosApuntes.trim() // Guarda el texto en el expediente
     }
   });
 
   return { 
     exito: true, 
-    mensaje: esNueva ? "¡Nueva actuación detectada!" : "Proceso al día, sin cambios.",
+    mensaje: esNueva ? "¡Novedad registrada y guardada en la bitácora del expediente!" : "Proceso al día, estado actualizado.",
     nueva: esNueva
   };
 }
