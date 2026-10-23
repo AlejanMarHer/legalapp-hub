@@ -3,6 +3,7 @@ import { currentUser } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
 import { PrismaClient } from '@prisma/client';
 import Link from 'next/link';
+import { SignOutButton } from '@clerk/nextjs'; // IMPORTACIÓN NUEVA
 
 // Importamos componentes y funciones
 import BotonResolverDashboard from './BotonResolverDashboard'; 
@@ -47,7 +48,7 @@ export default async function DashboardPage() {
   return (
     <div className="flex flex-col md:flex-row h-screen bg-[#F8FAFC] overflow-hidden relative">
       
-      {/* 📱 NAVEGACIÓN MÓVIL (Solo visible en celulares) */}
+      {/* 📱 NAVEGACIÓN MÓVIL */}
       <div className="md:hidden bg-white border-b border-slate-200 shrink-0 z-50 shadow-sm">
         <div className="p-4 flex items-center justify-between border-b border-slate-50">
           <div className="flex items-center gap-3">
@@ -64,8 +65,8 @@ export default async function DashboardPage() {
           </div>
         </div>
         
-        {/* Chips de navegación desplazables horizontalmente */}
-        <div className="px-4 py-3 overflow-x-auto whitespace-nowrap flex gap-2 [&::-webkit-scrollbar]:hidden">
+        {/* Chips de navegación desplazables */}
+        <div className="px-4 py-3 overflow-x-auto whitespace-nowrap flex gap-2 [&::-webkit-scrollbar]:hidden items-center">
           <Link href="/dashboard" className="inline-block px-4 py-2 bg-blue-50 text-blue-700 rounded-xl text-sm font-bold border border-blue-100">Centro de Mando</Link>
           <Link href="/dashboard/clientes" className="inline-block px-4 py-2 bg-slate-50 text-slate-600 hover:bg-slate-100 rounded-xl text-sm font-semibold border border-slate-200">Directorio Clientes</Link>
           <Link href="/dashboard/casos" className="inline-block px-4 py-2 bg-slate-50 text-slate-600 hover:bg-slate-100 rounded-xl text-sm font-semibold border border-slate-200">Mis Expedientes</Link>
@@ -75,10 +76,20 @@ export default async function DashboardPage() {
           <Link href="/dashboard/intereses" className="inline-block px-4 py-2 bg-slate-50 text-slate-600 hover:bg-slate-100 rounded-xl text-sm font-semibold border border-slate-200">Liquidador Intereses</Link>
           <Link href="/dashboard/laboral" className="inline-block px-4 py-2 bg-slate-50 text-slate-600 hover:bg-slate-100 rounded-xl text-sm font-semibold border border-slate-200">Liquidador Laboral</Link>
           <Link href="/dashboard/indexacion" className="inline-block px-4 py-2 bg-slate-50 text-slate-600 hover:bg-slate-100 rounded-xl text-sm font-semibold border border-slate-200">Indexación (DANE)</Link>
+          
+          {/* BOTÓN CERRAR SESIÓN MÓVIL */}
+          <div className="ml-2 border-l pl-2 border-slate-200">
+            <SignOutButton>
+              <button className="inline-flex items-center gap-2 px-4 py-2 bg-red-50 text-red-600 hover:bg-red-100 rounded-xl text-sm font-bold border border-red-100 transition-colors">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+                Salir
+              </button>
+            </SignOutButton>
+          </div>
         </div>
       </div>
 
-      {/* 💻 MENÚ LATERAL ESCRITORIO (Oculto en celulares con "hidden md:flex") */}
+      {/* 💻 MENÚ LATERAL ESCRITORIO */}
       <aside className="hidden md:flex w-64 bg-white border-r border-slate-200 flex-col shrink-0">
         <div className="p-6 border-b border-slate-200 flex items-center gap-3">
           <div className="w-10 h-10 bg-[#0A101D] rounded-xl flex items-center justify-center shrink-0 shadow-md p-1.5">
@@ -136,6 +147,17 @@ export default async function DashboardPage() {
             Liquidador Laboral
           </Link>
         </nav>
+        
+        {/* BOTÓN CERRAR SESIÓN ESCRITORIO */}
+        <div className="p-4 border-t border-slate-200 bg-white">
+          <SignOutButton>
+            <button className="flex items-center gap-3 w-full px-4 py-3 text-red-600 hover:bg-red-50 rounded-xl font-bold transition group">
+              <svg className="w-5 h-5 text-red-400 group-hover:text-red-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+              Cerrar Sesión
+            </button>
+          </SignOutButton>
+        </div>
+
         <div className="p-4 border-t border-slate-200">
           <div className="bg-slate-50 rounded-xl p-4 border border-slate-100 flex items-center gap-3">
             <div className="w-10 h-10 bg-[#1E3A8A] text-white rounded-full flex items-center justify-center font-bold text-lg overflow-hidden shrink-0">
@@ -265,7 +287,7 @@ export default async function DashboardPage() {
           <div className="bg-gradient-to-br from-white to-slate-50 rounded-3xl p-6 md:p-10 shadow-sm border border-slate-200 mt-10">
             <div className="flex items-center gap-4 mb-6 md:mb-8 border-b border-slate-200 pb-5">
               <div className="w-10 h-10 md:w-12 md:h-12 bg-blue-100 text-[#1E3A8A] rounded-xl flex items-center justify-center shadow-inner shrink-0">
-                <svg className="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+                <svg className="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477-4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
               </div>
               <div>
                 <h2 className="text-lg md:text-2xl font-black text-slate-900 tracking-tight">Manual de LitisApp</h2>
