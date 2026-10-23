@@ -45,7 +45,7 @@ export default async function DashboardPage() {
   const logoMostrar = config.logoBase64 || user.imageUrl;
 
   return (
-    <div className="flex flex-col md:flex-row h-screen bg-[#F8FAFC] overflow-hidden">
+    <div className="flex flex-col md:flex-row h-screen bg-[#F8FAFC] overflow-hidden relative">
       
       {/* 📱 NAVEGACIÓN MÓVIL (Solo visible en celulares) */}
       <div className="md:hidden bg-white border-b border-slate-200 shrink-0 z-50 shadow-sm">
@@ -69,7 +69,6 @@ export default async function DashboardPage() {
           <Link href="/dashboard" className="inline-block px-4 py-2 bg-blue-50 text-blue-700 rounded-xl text-sm font-bold border border-blue-100">Centro de Mando</Link>
           <Link href="/dashboard/clientes" className="inline-block px-4 py-2 bg-slate-50 text-slate-600 hover:bg-slate-100 rounded-xl text-sm font-semibold border border-slate-200">Directorio Clientes</Link>
           <Link href="/dashboard/casos" className="inline-block px-4 py-2 bg-slate-50 text-slate-600 hover:bg-slate-100 rounded-xl text-sm font-semibold border border-slate-200">Mis Expedientes</Link>
-          {/* NUEVO ENLACE MÓVIL: RADAR JUDICIAL */}
           <Link href="/dashboard/radar" className="inline-block px-4 py-2 bg-slate-50 text-slate-600 hover:bg-slate-100 rounded-xl text-sm font-semibold border border-slate-200">Radar Judicial</Link>
           <Link href="/dashboard/biblioteca" className="inline-block px-4 py-2 bg-slate-50 text-slate-600 hover:bg-slate-100 rounded-xl text-sm font-semibold border border-slate-200">Biblioteca Legal</Link>
           <Link href="/dashboard/tareas" className="inline-block px-4 py-2 bg-slate-50 text-slate-600 hover:bg-slate-100 rounded-xl text-sm font-semibold border border-slate-200">Tablero de Tareas</Link>
@@ -108,14 +107,13 @@ export default async function DashboardPage() {
             Mis Expedientes
           </Link>
 
-          {/* NUEVO ENLACE ESCRITORIO: RADAR JUDICIAL */}
           <Link href="/dashboard/radar" className="flex items-center gap-3 px-4 py-3 text-slate-600 hover:bg-slate-50 hover:text-emerald-600 rounded-xl font-medium transition group">
             <svg className="w-5 h-5 text-slate-400 group-hover:text-emerald-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
             Radar Judicial
           </Link>
 
           <Link href="/dashboard/biblioteca" className="flex items-center gap-3 px-4 py-3 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl font-medium transition">
-            <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+            <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477-4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
             Biblioteca Legal
           </Link>
 
@@ -152,7 +150,7 @@ export default async function DashboardPage() {
       </aside>
 
       {/* ÁREA PRINCIPAL */}
-      <main className="flex-1 overflow-y-auto">
+      <main className="flex-1 overflow-y-auto pb-20 md:pb-0">
         <div className="p-4 md:p-10 max-w-7xl mx-auto space-y-6 md:space-y-8">
           
           {/* 1. MÓDULO DE BRANDING */}
@@ -220,7 +218,8 @@ export default async function DashboardPage() {
                         <li key={caso.id} className="p-4 md:p-5 hover:bg-slate-50 transition-colors flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                           <div className="flex-1">
                             <p className="text-sm font-bold text-slate-900">{caso.descVencimiento || "Actuación Pendiente"}</p>
-                            <p className="text-xs text-slate-500 mt-1">Rad: <span className="font-medium">{caso.radicado || caso.id.slice(-8)}</span> • {caso.demandante} VS {caso.demandado}</p>
+                            <p className="text-xs text-slate-500 mt-1">Rad: <span className="font-medium">{caso.radicado || caso.id.slice(-8)}</span>
+{caso.demandante} VS {caso.demandado}</p>
                           </div>
                           <div className="flex flex-col items-end shrink-0 w-full sm:w-auto">
                             <div className={`text-right px-3 py-2 rounded-lg border w-full sm:w-auto mb-2 sm:mb-0 ${isUrgente ? 'bg-red-50 border-red-100' : 'bg-amber-50 border-amber-100'}`}>
@@ -276,7 +275,7 @@ export default async function DashboardPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
               
-              {/* 1. Directorio CRM (NUEVO) */}
+              {/* 1. Directorio CRM */}
               <div className="bg-white p-5 md:p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
                 <div className="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-lg flex items-center justify-center mb-3">
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
@@ -285,7 +284,7 @@ export default async function DashboardPage() {
                 <p className="text-xs md:text-sm text-slate-600 leading-relaxed">Tu base de datos central. Registra a tus asesorados para crearles una <b>Carpeta Maestra</b> donde gestionas su información de contacto, notas y su portafolio de expedientes.</p>
               </div>
 
-              {/* 2. Expedientes y Agenda (Fusionado) */}
+              {/* 2. Expedientes y Agenda */}
               <div className="bg-white p-5 md:p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
                 <div className="w-10 h-10 bg-orange-50 text-orange-600 rounded-lg flex items-center justify-center mb-3">
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
@@ -315,7 +314,7 @@ export default async function DashboardPage() {
               {/* 5. Biblioteca Legal */}
               <div className="bg-white p-5 md:p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
                 <div className="w-10 h-10 bg-amber-50 text-amber-600 rounded-lg flex items-center justify-center mb-3">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477-4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
                 </div>
                 <h3 className="font-bold text-slate-800 mb-2">Biblioteca Legal</h3>
                 <p className="text-xs md:text-sm text-slate-600 leading-relaxed">Tu segundo cerebro jurídico. Guarda tus mejores párrafos, argumentos y jurisprudencia. Usa el botón <b>"Copiar"</b> para pegarlos en tus demandas en un instante.</p>
@@ -332,9 +331,25 @@ export default async function DashboardPage() {
 
             </div>
           </div>
-
         </div>
       </main>
+
+      {/* BOTÓN FLOTANTE LITIS IA */}
+      <Link 
+        href="/dashboard/asistente" 
+        className="fixed bottom-8 right-8 bg-[#1E3A8A] hover:bg-blue-800 text-white p-4 rounded-full shadow-[0_10px_25px_rgba(30,58,138,0.5)] flex items-center justify-center gap-3 transition-all hover:scale-105 z-50 group border-2 border-blue-400/30"
+      >
+        <div className="relative">
+          <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+          </svg>
+          <span className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-400 border-2 border-[#1E3A8A] rounded-full animate-pulse"></span>
+        </div>
+        <span className="max-w-0 overflow-hidden whitespace-nowrap group-hover:max-w-[200px] transition-all duration-300 ease-in-out font-black text-sm pr-0 group-hover:pr-2">
+          Consultar a Litis IA
+        </span>
+      </Link>
+
     </div>
   );
 }
