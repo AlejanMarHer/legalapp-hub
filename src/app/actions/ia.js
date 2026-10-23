@@ -10,9 +10,9 @@ export async function consultarAsistenteLegal(historialMensajes) {
   if (!user) throw new Error("No autenticado");
 
   try {
-    // Apuntamos directamente a la versión Pro más reciente y estable que mencionas
+    // Volvemos al modelo confirmado que sabemos que existe en los servidores de Google
     const model = genAI.getGenerativeModel({ 
-      model: "gemini-3.1-pro",
+      model: "gemini-3.8-flash",
       systemInstruction: `Eres 'Litis', la Inteligencia Artificial oficial de LitisApp. Eres un abogado experto en litigio en Colombia. Conoces a la perfección el Código General del Proceso (CGP), Código Sustantivo del Trabajo, CPACA y Código Civil. Tu objetivo es ayudar al usuario a redactar argumentos, estructurar demandas, resolver dudas procesales y proponer estrategias legales. Responde siempre de manera formal, estructurada, clara y al grano. Usa viñetas para facilitar la lectura. Nunca inventes jurisprudencia; si no estás seguro de una ley, indícalo.`
     });
 
@@ -21,6 +21,7 @@ export async function consultarAsistenteLegal(historialMensajes) {
       parts: [{ text: msg.content }]
     }));
 
+    // Filtro para evitar el error de "primer mensaje del modelo"
     if (historialGemini.length > 0 && historialGemini[0].role === 'model') {
       historialGemini.shift(); 
     }
@@ -45,11 +46,11 @@ export async function consultarAsistenteLegal(historialMensajes) {
   } catch (error) {
     console.error("Error exacto en Gemini:", error);
     
-    // Traductor de errores amigable para picos de tráfico
+    // Nuestro escudo contra picos de tráfico (Error 503)
     if (error.message.includes('503') || error.message.includes('overloaded')) {
       return { 
         exito: false, 
-        mensaje: "Mis servidores en Google están experimentando una alta congestión en este momento. Por favor, espera unos segundos y vuelve a enviar tu pregunta." 
+        mensaje: "Mis servidores en Google están experimentando una alta congestión en este momento. Por favor, espera unos segundos y vuelve a intentar." 
       };
     }
     
