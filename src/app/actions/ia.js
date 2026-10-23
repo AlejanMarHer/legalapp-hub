@@ -10,8 +10,9 @@ export async function consultarAsistenteLegal(historialMensajes) {
   if (!user) throw new Error("No autenticado");
 
   try {
+    // CAMBIO CRÍTICO: Actualizamos el nombre del modelo para usar la versión activa más reciente
     const model = genAI.getGenerativeModel({ 
-      model: "gemini-1.5-flash",
+      model: "gemini-1.5-flash-latest",
       systemInstruction: `Eres 'Litis', la Inteligencia Artificial oficial de LitisApp. Eres un abogado experto en litigio en Colombia. Conoces a la perfección el Código General del Proceso (CGP), Código Sustantivo del Trabajo, CPACA y Código Civil. Tu objetivo es ayudar al usuario a redactar argumentos, estructurar demandas, resolver dudas procesales y proponer estrategias legales. Responde siempre de manera formal, estructurada, clara y al grano. Usa viñetas para facilitar la lectura. Nunca inventes jurisprudencia; si no estás seguro de una ley, indícalo.`
     });
 
@@ -21,8 +22,7 @@ export async function consultarAsistenteLegal(historialMensajes) {
       parts: [{ text: msg.content }]
     }));
 
-    // 2. FILTRO VITAL: Gemini exige que el historial empiece con un humano.
-    // Quitamos el saludo inicial automático de LitisApp para evitar el bloqueo 400 Bad Request.
+    // 2. Filtro vital: Gemini exige que el historial empiece con un humano.
     if (historialGemini.length > 0 && historialGemini[0].role === 'model') {
       historialGemini.shift(); 
     }
@@ -46,7 +46,6 @@ export async function consultarAsistenteLegal(historialMensajes) {
 
   } catch (error) {
     console.error("Error exacto en Gemini:", error);
-    // Ahora devolvemos el error real de Google a la pantalla para saber exactamente qué pasa
     return { exito: false, mensaje: `Fallo de Google Gemini: ${error.message}` };
   }
 }
