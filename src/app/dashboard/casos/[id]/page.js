@@ -8,9 +8,11 @@ import Link from 'next/link';
 import BotonReporteCliente from './BotonReporteCliente';
 import BotonResolverVencimiento from './BotonResolverVencimiento';
 import BotonRegistrarPago from './BotonRegistrarPago';
+import SubidorDocumentos from './SubidorDocumentos'; // NUEVO COMPONENTE
 
-// Importación de la acción para traer la configuración de marca blanca
+// Importación de acciones
 import { obtenerConfiguracion } from '@/app/actions/configuracion';
+import { obtenerDocumentosCaso } from '@/app/actions/documentos'; // NUEVA ACCIÓN
 
 export const dynamic = 'force-dynamic';
 
@@ -41,11 +43,19 @@ export default async function ExpedienteDetallePage({ params }) {
     return <div className="p-8 text-center text-red-500 font-bold">Expediente no encontrado o sin permisos.</div>;
   }
 
+  // OBTENER LOS PDFs GUARDADOS EN VERCEL BLOB PARA ESTE CASO
+  let documentos = [];
+  try {
+    documentos = await obtenerDocumentosCaso(casoId);
+  } catch (error) {
+    console.error("No se pudieron cargar los documentos:", error);
+  }
+
   const formatCOP = (val) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(val || 0);
   const formatFecha = (fecha) => fecha ? new Date(fecha).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' }) : 'No registrada';
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] p-4 md:p-8 font-sans">
+    <div className="min-h-screen bg-[#F8FAFC] p-4 md:p-8 font-sans pb-24">
       <div className="max-w-6xl mx-auto space-y-6">
         
         {/* Navegación Superior */}
@@ -80,7 +90,7 @@ export default async function ExpedienteDetallePage({ params }) {
               className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 px-5 rounded-xl shadow-md transition-all hover:-translate-y-0.5 flex items-center justify-center gap-2 text-sm"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-              Generar Poder (Word)
+              Generar Poder
             </Link>
             <Link 
               href={`/dashboard/intereses?casoId=${caso.id}`}
@@ -89,7 +99,6 @@ export default async function ExpedienteDetallePage({ params }) {
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
               Liquidar Intereses
             </Link>
-            {/* BOTÓN REPORTE CLIENTE CON MARCA BLANCA INYECTADA */}
             <BotonReporteCliente 
               caso={caso} 
               nombreOficial={nombreOficial}
@@ -124,6 +133,53 @@ export default async function ExpedienteDetallePage({ params }) {
               </div>
             </div>
 
+            {/* SECCIÓN NUEVA: EXPEDIENTE FÍSICO (VERCEL BLOB) */}
+            <div className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-slate-200">
+              <div className="flex items-center justify-between mb-5 border-b border-slate-100 pb-3">
+                <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
+                  <svg className="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                  Expediente Digital (PDFs)
+                </h3>
+                <span className="bg-indigo-100 text-indigo-800 text-[10px] font-black px-2 py-1 rounded-md uppercase">Vercel Blob</span>
+              </div>
+              
+              <div className="space-y-4">
+                <SubidorDocumentos casoId={casoId} />
+
+                {documentos.length > 0 ? (
+                  <div className="mt-6 border border-slate-100 rounded-xl overflow-hidden divide-y divide-slate-100">
+                    {documentos.map(doc => (
+                      <div key={doc.id} className="p-4 bg-slate-50/50 hover:bg-slate-100 flex items-center justify-between transition group">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-red-100 text-red-600 rounded-lg flex items-center justify-center shrink-0">
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                          </div>
+                          <div className="truncate">
+                            <p className="text-sm font-bold text-slate-800 truncate" title={doc.nombre}>{doc.nombre}</p>
+                            <p className="text-[10px] text-slate-500 font-medium">
+                              Subido el {new Date(doc.createdAt).toLocaleDateString('es-CO')} • {(doc.tamanoBytes / 1024 / 1024).toFixed(2)} MB
+                            </p>
+                          </div>
+                        </div>
+                        <a 
+                          href={doc.urlArchivo} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="bg-white border border-slate-200 text-slate-700 hover:text-indigo-600 hover:border-indigo-200 font-bold text-xs py-2 px-4 rounded-lg shadow-sm transition"
+                        >
+                          Ver PDF
+                        </a>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-6">
+                    <p className="text-sm text-slate-500">No hay documentos subidos en este expediente.</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
             <div className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-slate-200">
               <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider mb-5 border-b border-slate-100 pb-3">Resumen y Estrategia</h3>
               <div className="space-y-6">
@@ -140,7 +196,6 @@ export default async function ExpedienteDetallePage({ params }) {
               </div>
             </div>
 
-            {/* SECCIÓN: HISTORIAL DE PAGOS */}
             <div className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-slate-200">
               <div className="flex items-center justify-between mb-5 border-b border-slate-100 pb-3">
                 <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider">Historial de Pagos Recibidos</h3>
@@ -219,7 +274,6 @@ export default async function ExpedienteDetallePage({ params }) {
                 </li>
               </ul>
               
-              {/* BOTÓN REGISTRAR PAGO CON MARCA BLANCA INYECTADA */}
               <BotonRegistrarPago 
                 caso={caso} 
                 nombreOficial={nombreOficial}
@@ -273,6 +327,22 @@ export default async function ExpedienteDetallePage({ params }) {
         </div>
 
       </div>
+
+      {/* BOTÓN FLOTANTE LITIS IA EN LA VISTA DEL CASO */}
+      <Link 
+        href="/dashboard/asistente" 
+        className="fixed bottom-8 right-8 bg-[#1E3A8A] hover:bg-blue-800 text-white p-4 rounded-full shadow-[0_10px_25px_rgba(30,58,138,0.5)] flex items-center justify-center gap-3 transition-all hover:scale-105 z-50 group border-2 border-blue-400/30"
+      >
+        <div className="relative">
+          <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+          </svg>
+          <span className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-400 border-2 border-[#1E3A8A] rounded-full animate-pulse"></span>
+        </div>
+        <span className="max-w-0 overflow-hidden whitespace-nowrap group-hover:max-w-[200px] transition-all duration-300 ease-in-out font-black text-sm pr-0 group-hover:pr-2">
+          Consultar a Litis IA
+        </span>
+      </Link>
     </div>
   );
 }
