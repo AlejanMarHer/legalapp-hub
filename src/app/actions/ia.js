@@ -3,14 +3,16 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { currentUser } from '@clerk/nextjs/server';
 import { PrismaClient } from '@prisma/client';
-import pdf from 'pdf-parse';
+
+// SOLUCIÓN VERCEL: Usamos require nativo en lugar de import para librerías CommonJS
+const pdf = require('pdf-parse');
 
 const prisma = global.prisma || new PrismaClient();
 if (process.env.NODE_ENV !== 'production') global.prisma = prisma;
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-// 1. NUEVA FUNCIÓN: Trae los casos del abogado para llenar el menú desplegable del chat
+// 1. FUNCIÓN: Trae los casos del abogado para llenar el menú desplegable del chat
 export async function obtenerExpedientesParaIA() {
   const user = await currentUser();
   if (!user) return [];
