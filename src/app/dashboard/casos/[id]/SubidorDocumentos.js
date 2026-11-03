@@ -11,12 +11,11 @@ export default function SubidorDocumentos({ casoId }) {
     const file = e.target.files[0];
     if (!file) return;
 
-    // Validación básica: que sea PDF y menor a 10MB
     if (file.type !== 'application/pdf') {
       setErrorMensaje("Por favor sube únicamente archivos en formato PDF.");
       return;
     }
-    if (file.size > 10 * 1024 * 1024) { // 10 MB
+    if (file.size > 10 * 1024 * 1024) { 
       setErrorMensaje("El archivo es muy pesado. El límite es de 10MB.");
       return;
     }
@@ -34,13 +33,13 @@ export default function SubidorDocumentos({ casoId }) {
       if (!result.exito) {
         setErrorMensaje(result.mensaje);
       }
-      // Si es exitoso, la página se recarga sola por el revalidatePath del backend
     } catch (error) {
       console.error("Error en la subida:", error);
-      setErrorMensaje("La conexión fue rechazada. Verifica el tamaño del archivo o tu internet.");
+      // Aquí mostraremos el error real que devuelva el servidor
+      setErrorMensaje(`Fallo técnico: ${error.message}`);
     } finally {
       setIsUploading(false);
-      e.target.value = null; // Limpiamos el input para permitir reintentos
+      e.target.value = null; 
     }
   };
 
