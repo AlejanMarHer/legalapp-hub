@@ -3,7 +3,7 @@ import { currentUser } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
 import { PrismaClient } from '@prisma/client';
 import Link from 'next/link';
-import { SignOutButton } from '@clerk/nextjs'; // IMPORTACIÓN NUEVA
+import { SignOutButton } from '@clerk/nextjs';
 
 // Importamos componentes y funciones
 import BotonResolverDashboard from './BotonResolverDashboard'; 
@@ -77,6 +77,12 @@ export default async function DashboardPage() {
           <Link href="/dashboard/laboral" className="inline-block px-4 py-2 bg-slate-50 text-slate-600 hover:bg-slate-100 rounded-xl text-sm font-semibold border border-slate-200">Liquidador Laboral</Link>
           <Link href="/dashboard/indexacion" className="inline-block px-4 py-2 bg-slate-50 text-slate-600 hover:bg-slate-100 rounded-xl text-sm font-semibold border border-slate-200">Indexación (DANE)</Link>
           
+          {/* BOTÓN SUSCRIPCIÓN MÓVIL */}
+          <Link href="/dashboard/suscripcion" className="inline-flex items-center gap-1.5 px-4 py-2 bg-amber-100 text-amber-700 hover:bg-amber-200 rounded-xl text-sm font-bold border border-amber-200 transition-colors">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/></svg>
+            Mi Plan
+          </Link>
+
           {/* BOTÓN CERRAR SESIÓN MÓVIL */}
           <div className="ml-2 border-l pl-2 border-slate-200">
             <SignOutButton>
@@ -114,7 +120,7 @@ export default async function DashboardPage() {
           </Link>
 
           <Link href="/dashboard/casos" className="flex items-center gap-3 px-4 py-3 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl font-medium transition">
-            <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
+            <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
             Mis Expedientes
           </Link>
 
@@ -148,6 +154,14 @@ export default async function DashboardPage() {
           </Link>
         </nav>
         
+        {/* BOTÓN SUSCRIPCIÓN ESCRITORIO */}
+        <div className="p-4 border-t border-slate-200 bg-slate-50">
+          <Link href="/dashboard/suscripcion" className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-300 hover:to-orange-400 text-slate-900 rounded-xl font-black transition-all hover:scale-105 shadow-md">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/></svg>
+            Mi Suscripción
+          </Link>
+        </div>
+
         {/* BOTÓN CERRAR SESIÓN ESCRITORIO */}
         <div className="p-4 border-t border-slate-200 bg-white">
           <SignOutButton>
@@ -270,6 +284,10 @@ export default async function DashboardPage() {
                 <Link href="/dashboard/casos/nuevo" className="flex items-center gap-3 p-4 rounded-xl bg-[#1E3A8A] text-white hover:bg-blue-800 transition-colors shadow-sm group">
                   <div className="bg-white/20 p-2 rounded-lg group-hover:scale-110 transition-transform"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"/></svg></div>
                   <span className="font-bold text-sm">Nuevo Expediente</span>
+                </Link>
+                <Link href="/dashboard/suscripcion" className="flex items-center gap-3 p-4 rounded-xl border border-amber-200 hover:border-amber-300 hover:bg-amber-50 transition-colors group">
+                  <div className="bg-amber-100 text-amber-600 p-2 rounded-lg group-hover:bg-amber-200 group-hover:text-amber-700 transition-colors"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/></svg></div>
+                  <span className="font-bold text-sm text-slate-700 group-hover:text-amber-800">Mi Suscripción</span>
                 </Link>
                 <Link href="/dashboard/intereses" className="flex items-center gap-3 p-4 rounded-xl border border-slate-200 hover:border-blue-200 hover:bg-blue-50 transition-colors group">
                   <div className="bg-slate-100 text-slate-600 p-2 rounded-lg group-hover:bg-blue-100 group-hover:text-blue-600 transition-colors"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>
