@@ -4,11 +4,16 @@ import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { guardarNuevoExpediente } from '../../../actions/expedientes';
+import { verificarEstadoSuscripcion } from '../../../actions/suscripciones'; // NUEVA IMPORTACIÓN
 
 function FormularioExpediente() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isSaving, setIsSaving] = useState(false);
+  
+  // Estados para el Muro de Pago
+  const [isCheckingPlan, setIsCheckingPlan] = useState(true);
+  const [planStatus, setPlanStatus] = useState(null);
   
   const clienteIdUrl = searchParams.get('clienteId');
   const nombreClienteUrl = searchParams.get('nombre');
@@ -23,6 +28,21 @@ function FormularioExpediente() {
     fechaPresentacion: '', fechaAdmision: '', fechaVencimiento: '', descVencimiento: '',
     resumenHechos: '', apuntesPrivados: ''
   });
+
+  // Efecto que verifica el plan antes de dejar al usuario crear el caso
+  useEffect(() => {
+    async function checkPlan() {
+      try {
+        const status = await verificarEstadoSuscripcion();
+        setPlanStatus(status);
+      } catch (error) {
+        console.error("Error verificando plan:", error);
+      } finally {
+        setIsCheckingPlan(false);
+      }
+    }
+    checkPlan();
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -41,7 +61,40 @@ function FormularioExpediente() {
     }
   };
 
-  // BLOQUEO ESTRICTO: Si no hay un cliente asociado en la URL, no mostramos el formulario
+  // 1. PANTALLA DE CARGA (Mientras verifica la base de datos)
+  if (isCheckingPlan) {
+    return (
+      <div className="flex flex-col items-center justify-center bg-white p-12 rounded-3xl shadow-sm border border-slate-200 text-center mt-10">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1E3A8A] mb-4"></div>
+        <h2 className="text-xl font-bold text-slate-800">Verificando credenciales de tu despacho...</h2>
+      </div>
+    );
+  }
+
+  // 2. MURO DE PAGO (PAYWALL): Si es usuario GRATIS y llegó al límite
+  if (planStatus?.limiteAlcanzado) {
+    return (
+      <div className="flex flex-col items-center justify-center bg-gradient-to-b from-white to-slate-50 p-10 md:p-16 rounded-3xl shadow-sm border border-slate-200 text-center mt-10 relative overflow-hidden">
+        <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-amber-400 to-orange-500"></div>
+        <div className="w-24 h-24 bg-amber-100 text-amber-500 rounded-full flex items-center justify-center mb-6 shadow-inner border-4 border-white">
+          <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+        </div>
+        <h2 className="text-3xl font-black text-slate-900 mb-3 tracking-tight">Límite de Expedientes Alcanzado</h2>
+        <p className="text-slate-600 mb-8 max-w-lg text-lg leading-relaxed">
+          Tu plan actual te permite gestionar hasta 5 expedientes simultáneos. Eleva tu litigio al siguiente nivel y desbloquea <b>expedientes ilimitados</b> y acceso total a <b>Litis IA</b>.
+        </p>
+        <Link href="/dashboard/suscripcion" className="bg-gradient-to-r from-amber-500 to-orange-600 text-white font-black py-4 px-10 rounded-xl shadow-lg hover:shadow-xl hover:scale-105 transition-all flex items-center gap-3">
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/></svg>
+          ACTUALIZAR AL PLAN PRO
+        </Link>
+        <Link href="/dashboard/casos" className="mt-8 text-sm font-bold text-slate-500 hover:text-slate-800 underline transition-colors">
+          Volver a Mis Expedientes
+        </Link>
+      </div>
+    );
+  }
+
+  // 3. BLOQUEO ESTRICTO DE CRM: Si no hay un cliente asociado en la URL
   if (!clienteIdUrl) {
     return (
       <div className="flex flex-col items-center justify-center bg-white p-10 rounded-3xl shadow-sm border border-red-100 text-center mt-10">
@@ -57,6 +110,7 @@ function FormularioExpediente() {
     );
   }
 
+  // 4. FORMULARIO COMPLETO (Si pasaste todos los filtros)
   return (
     <div className="w-full">
       <Link href={`/dashboard/clientes/${clienteIdUrl}`} className="text-blue-600 flex items-center gap-2 hover:underline font-medium text-sm w-fit mb-6">
