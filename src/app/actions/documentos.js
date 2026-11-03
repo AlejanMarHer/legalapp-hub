@@ -23,14 +23,13 @@ export async function subirDocumentoExpediente(formData) {
   }
 
   try {
-    // 1. Subir el archivo físicamente a Vercel Blob
-    // Le ponemos un prefijo con el ID del caso para mantener orden en la nube
     const nombreLimpio = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+    
+    // CAMBIO CLAVE: Usamos access: 'private' para que coincida con tu Blob Store de Vercel
     const blob = await put(`expedientes/${casoId}/${nombreLimpio}`, file, {
-      access: 'public', 
+      access: 'private', 
     });
 
-    // 2. Guardar el registro y la URL en tu base de datos (Prisma)
     const nuevoDocumento = await prisma.documento.create({
       data: {
         nombre: file.name,
@@ -40,7 +39,6 @@ export async function subirDocumentoExpediente(formData) {
       }
     });
 
-    // 3. Recargar la página del expediente para que el PDF aparezca al instante
     revalidatePath(`/dashboard/casos/${casoId}`);
 
     return { exito: true, documento: nuevoDocumento };
@@ -58,7 +56,6 @@ export async function obtenerDocumentosCaso(casoId) {
   const user = await currentUser();
   if (!user) throw new Error("No autorizado.");
 
-  // Verificamos que el caso pertenezca al usuario para evitar fugas de información
   const caso = await prisma.caso.findFirst({
     where: { 
       id: casoId,
