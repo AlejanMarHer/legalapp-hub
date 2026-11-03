@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
-import { consultarAsistenteLegal } from '@/app/actions/ia';
+import { consultarAsistenteLegal, obtenerExpedientesParaIA } from '@/app/actions/ia';
 
 export default function AsistenteIAPage() {
   const [mensajes, setMensajes] = useState([
@@ -10,7 +10,21 @@ export default function AsistenteIAPage() {
   ]);
   const [input, setInput] = useState('');
   const [cargando, setCargando] = useState(false);
+  
+  // Nuevos estados para el selector de expedientes
+  const [casos, setCasos] = useState([]);
+  const [casoSeleccionado, setCasoSeleccionado] = useState('');
+  
   const finalChatRef = useRef(null);
+
+  // Cargar la lista de expedientes al abrir el chat
+  useEffect(() => {
+    async function cargarCasos() {
+      const data = await obtenerExpedientesParaIA();
+      setCasos(data);
+    }
+    cargarCasos();
+  }, []);
 
   // Autoscroll hacia el último mensaje
   useEffect(() => {
@@ -30,7 +44,8 @@ export default function AsistenteIAPage() {
     setCargando(true);
 
     try {
-      const resultado = await consultarAsistenteLegal(nuevoHistorial);
+      // Le pasamos a la IA tanto el historial de chat como el ID del caso que elegimos
+      const resultado = await consultarAsistenteLegal(nuevoHistorial, casoSeleccionado);
       
       if (resultado.exito) {
         setMensajes(prev => [...prev, { role: 'assistant', content: resultado.respuesta }]);
@@ -45,10 +60,10 @@ export default function AsistenteIAPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] flex flex-col h-screen font-sans">
+    <div className="min-h-screen bg-[#F8FAFC] flex flex-col h-screen font-sans relative">
       
       {/* Encabezado del Asistente */}
-      <div className="bg-slate-900 p-4 md:p-6 shadow-md border-b border-slate-700 flex justify-between items-center shrink-0 z-10">
+      <div className="bg-slate-900 p-4 md:p-6 shadow-md border-b border-slate-700 flex justify-between items-center shrink-0 z-20">
         <div className="flex items-center gap-4">
           <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg relative">
             <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
@@ -62,6 +77,36 @@ export default function AsistenteIAPage() {
         <Link href="/dashboard" className="bg-slate-800 hover:bg-slate-700 text-white font-bold py-2 px-4 rounded-lg transition text-sm border border-slate-600">
           Cerrar
         </Link>
+      </div>
+
+      {/* SELECTOR DE EXPEDIENTE (BARRA DE CONTEXTO) */}
+      <div className="bg-white border-b border-slate-200 px-4 md:px-8 py-3 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-sm z-10">
+        <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-3 w-full flex-1">
+          <label className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5 shrink-0">
+            <svg className="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+            Contexto de la IA:
+          </label>
+          <select 
+            value={casoSeleccionado}
+            onChange={(e) => setCasoSeleccionado(e.target.value)}
+            className="text-sm font-bold text-slate-700 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 w-full max-w-xl outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition cursor-pointer"
+          >
+            <option value="">Consultas Generales (Sin expediente enlazado)</option>
+            {casos.map(c => (
+              <option key={c.id} value={c.id}>
+                {c.nombre} {c.tieneDocs ? '(📑 Tiene PDFs)' : '(⚠️ Sin PDFs)'}
+              </option>
+            ))}
+          </select>
+        </div>
+        
+        {/* Etiqueta indicadora visual */}
+        {casoSeleccionado && (
+          <div className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider shrink-0 flex items-center gap-1.5 ${casos.find(c => c.id === casoSeleccionado)?.tieneDocs ? 'bg-indigo-100 text-indigo-800 border border-indigo-200' : 'bg-amber-100 text-amber-800 border border-amber-200'}`}>
+            <span className={`w-2 h-2 rounded-full ${casos.find(c => c.id === casoSeleccionado)?.tieneDocs ? 'bg-indigo-500 animate-pulse' : 'bg-amber-500'}`}></span>
+            {casos.find(c => c.id === casoSeleccionado)?.tieneDocs ? 'Analizando PDFs' : 'Solo Datos Básicos'}
+          </div>
+        )}
       </div>
 
       {/* Área de Chat */}
@@ -89,6 +134,7 @@ export default function AsistenteIAPage() {
                 <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce"></div>
                 <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
                 <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></div>
+                <span className="text-xs text-slate-400 font-bold ml-2">Analizando documentos...</span>
               </div>
             </div>
           )}
@@ -97,14 +143,14 @@ export default function AsistenteIAPage() {
       </div>
 
       {/* Input de Texto */}
-      <div className="bg-white border-t border-slate-200 p-4 md:p-6 shrink-0">
+      <div className="bg-white border-t border-slate-200 p-4 md:p-6 shrink-0 z-20">
         <form onSubmit={enviarMensaje} className="max-w-4xl mx-auto flex gap-3">
           <input 
             type="text" 
             value={input}
             onChange={(e) => setInput(e.target.value)}
             disabled={cargando}
-            placeholder="Pregúntame sobre un recurso, redacta un alegato o consulta un término procesal..." 
+            placeholder="Pregúntame sobre un recurso o pídeme que analice el PDF de tu expediente..." 
             className="flex-1 bg-slate-50 border border-slate-300 rounded-xl px-5 py-4 outline-none focus:ring-2 focus:ring-blue-600 transition text-slate-800 disabled:opacity-50"
           />
           <button 

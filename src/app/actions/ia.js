@@ -2,18 +2,69 @@
 
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { currentUser } from '@clerk/nextjs/server';
+import { PrismaClient } from '@prisma/client';
+import pdf from 'pdf-parse';
+
+const prisma = global.prisma || new PrismaClient();
+if (process.env.NODE_ENV !== 'production') global.prisma = prisma;
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-export async function consultarAsistenteLegal(historialMensajes) {
+// 1. NUEVA FUNCIÓN: Trae los casos del abogado para llenar el menú desplegable del chat
+export async function obtenerExpedientesParaIA() {
+  const user = await currentUser();
+  if (!user) return [];
+  
+  const casos = await prisma.caso.findMany({
+    where: { userId: user.id },
+    select: { id: true, radicado: true, demandante: true, demandado: true, documentos: true },
+    orderBy: { updatedAt: 'desc' }
+  });
+  
+  return casos.map(c => ({
+    id: c.id,
+    nombre: c.radicado ? `${c.radicado} - ${c.demandante} VS ${c.demandado}` : `${c.demandante} VS ${c.demandado}`,
+    tieneDocs: c.documentos.length > 0
+  }));
+}
+
+// 2. FUNCIÓN PRINCIPAL ACTUALIZADA: Ahora recibe el casoId y lee los PDFs
+export async function consultarAsistenteLegal(historialMensajes, casoId = null) {
   const user = await currentUser();
   if (!user) throw new Error("No autenticado");
 
+  let contextoExpediente = "";
+
   try {
-    // Volvemos al modelo confirmado que sabemos que existe en los servidores de Google
+    // Si el usuario seleccionó un caso, buscamos sus documentos en la base de datos
+    if (casoId) {
+      const documentos = await prisma.documento.findMany({
+        where: { casoId: casoId, caso: { userId: user.id } }
+      });
+
+      if (documentos.length > 0) {
+        contextoExpediente = "\n\n--- INICIO DEL MATERIAL PROBATORIO DEL EXPEDIENTE ---\n";
+        
+        // Descargamos y leemos cada PDF asociado al caso
+        for (const doc of documentos) {
+          try {
+            const response = await fetch(doc.urlArchivo);
+            const arrayBuffer = await response.arrayBuffer();
+            const buffer = Buffer.from(arrayBuffer);
+            const pdfData = await pdf(buffer);
+            contextoExpediente += `\nDocumento: ${doc.nombre}\nContenido Extraído:\n${pdfData.text}\n`;
+          } catch (e) {
+            console.error("Error leyendo PDF:", doc.nombre, e);
+          }
+        }
+        contextoExpediente += "\n--- FIN DEL MATERIAL PROBATORIO ---\nSi el usuario te pregunta sobre su caso, usa EXCLUSIVAMENTE esta información extraída de los PDFs para responderle con precisión técnica.";
+      }
+    }
+
+    // Inicializamos Gemini inyectándole la instrucción base + el texto de los PDFs (si los hay)
     const model = genAI.getGenerativeModel({ 
       model: "gemini-3.8-flash",
-      systemInstruction: `Eres 'Litis', la Inteligencia Artificial oficial de LitisApp. Eres un abogado experto en litigio en Colombia. Conoces a la perfección el Código General del Proceso (CGP), Código Sustantivo del Trabajo, CPACA y Código Civil. Tu objetivo es ayudar al usuario a redactar argumentos, estructurar demandas, resolver dudas procesales y proponer estrategias legales. Responde siempre de manera formal, estructurada, clara y al grano. Usa viñetas para facilitar la lectura. Nunca inventes jurisprudencia; si no estás seguro de una ley, indícalo.`
+      systemInstruction: `Eres 'Litis', la Inteligencia Artificial oficial de LitisApp. Eres un abogado experto en litigio en Colombia. Conoces a la perfección el Código General del Proceso (CGP), Código Sustantivo del Trabajo, CPACA y Código Civil. Tu objetivo es ayudar al usuario a redactar argumentos, estructurar demandas y proponer estrategias. Responde siempre formal, estructurado y al grano. Usa viñetas. ${contextoExpediente}`
     });
 
     let historialGemini = historialMensajes.slice(0, -1).map(msg => ({
@@ -21,7 +72,6 @@ export async function consultarAsistenteLegal(historialMensajes) {
       parts: [{ text: msg.content }]
     }));
 
-    // Filtro para evitar el error de "primer mensaje del modelo"
     if (historialGemini.length > 0 && historialGemini[0].role === 'model') {
       historialGemini.shift(); 
     }
@@ -30,28 +80,19 @@ export async function consultarAsistenteLegal(historialMensajes) {
 
     const chat = model.startChat({
       history: historialGemini,
-      generationConfig: {
-        temperature: 0.4, 
-      },
+      generationConfig: { temperature: 0.4 },
     });
 
     const result = await chat.sendMessage(ultimoMensaje);
     const response = await result.response;
     
-    return { 
-      exito: true, 
-      respuesta: response.text()
-    };
+    return { exito: true, respuesta: response.text() };
 
   } catch (error) {
     console.error("Error exacto en Gemini:", error);
     
-    // Nuestro escudo contra picos de tráfico (Error 503)
     if (error.message.includes('503') || error.message.includes('overloaded')) {
-      return { 
-        exito: false, 
-        mensaje: "Mis servidores en Google están experimentando una alta congestión en este momento. Por favor, espera unos segundos y vuelve a intentar." 
-      };
+      return { exito: false, mensaje: "Mis servidores están experimentando una alta congestión. Por favor, espera unos segundos y vuelve a intentar." };
     }
     
     return { exito: false, mensaje: `Fallo del sistema base: ${error.message}` };
