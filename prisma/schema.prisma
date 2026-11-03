@@ -54,17 +54,17 @@ model Caso {
   resumenHechos       String?   @db.Text
   apuntesPrivados     String?   @db.Text
 
-  // Relación con el Cliente (Opcional por ahora para no borrar los casos que ya creaste)
-  clienteId        String?
-  cliente          Cliente?  @relation(fields: [clienteId], references: [id])
+  // Relación con el Cliente
+  clienteId           String?
+  cliente             Cliente?  @relation(fields: [clienteId], references: [id])
   
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
 
-  // Relación con el historial de cálculos
+  // Relaciones secundarias
   liquidaciones       Liquidacion[]
-
-  abonos        Abono[]
+  abonos              Abono[]
+  documentos          Documento[] // NUEVO: Para enlazar los PDFs de Vercel Blob al caso
 
   // Campos del Radar Judicial
   radarUltimaConsulta  DateTime?
@@ -74,35 +74,34 @@ model Caso {
 }
 
 model Liquidacion {
-  id          String   @id @default(cuid())
-  tipo        String   // Ej. "Intereses", "Indexación", "Laboral"
-  datos       Json     // Aquí guardaremos todos los números y resultados
+  id        String   @id @default(cuid())
+  tipo      String   // Ej. "Intereses", "Indexación", "Laboral"
+  datos     Json     // Aquí guardaremos todos los números y resultados
   
-  // Conexión obligatoria con el Expediente
-  casoId      String
-  caso        Caso     @relation(fields: [casoId], references: [id], onDelete: Cascade)
+  casoId    String
+  caso      Caso     @relation(fields: [casoId], references: [id], onDelete: Cascade)
 
-  createdAt   DateTime @default(now())
+  createdAt DateTime @default(now())
 }
 
 model Abono {
-  id          String   @id @default(cuid())
-  monto       Float
-  concepto    String?
-  fecha       DateTime @default(now())
+  id        String   @id @default(cuid())
+  monto     Float
+  concepto  String?
+  fecha     DateTime @default(now())
   
-  casoId      String
-  caso        Caso     @relation(fields: [casoId], references: [id], onDelete: Cascade)
+  casoId    String
+  caso      Caso     @relation(fields: [casoId], references: [id], onDelete: Cascade)
 }
 
 model Argumento {
   id            String   @id @default(cuid())
-  titulo        String   // Ej: "Falta de Legitimación en la Causa por Pasiva"
-  contenido     String   @db.Text // @db.Text permite guardar textos muy largos
-  ramaDerecho   String   // Ej: "Civil", "Laboral", "Constitucional"
-  palabrasClave String?  // Ej: "excepciones, demanda, cobro"
+  titulo        String   
+  contenido     String   @db.Text 
+  ramaDerecho   String   
+  palabrasClave String?  
   
-  userId        String   // Para que tus argumentos sean privados y solo tuyos
+  userId        String   
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 }
@@ -111,9 +110,9 @@ model Configuracion {
   id             String   @id @default(cuid())
   userId         String   @unique
   
-  nombreDespacho String?  // Ej: "Martínez & Asociados" o "Alejandro Martinez Abogados"
-  logoBase64     String?  @db.Text // Aquí guardaremos tu Logo convertido en código
-  firmaBase64    String?  @db.Text // Aquí guardaremos tu firma con fondo transparente
+  nombreDespacho String?  
+  logoBase64     String?  @db.Text 
+  firmaBase64    String?  @db.Text 
   
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
@@ -121,13 +120,13 @@ model Configuracion {
 
 model Tarea {
   id               String    @id @default(cuid())
-  titulo           String    // Ej: "Radicar memorial de embargo"
+  titulo           String    
   descripcion      String?   @db.Text
-  estado           String    @default("POR HACER") // POR HACER, EN TRÁMITE, FINALIZADO
-  prioridad        String    @default("Media") // Alta, Media, Baja
+  estado           String    @default("POR HACER") 
+  prioridad        String    @default("Media") 
   fechaVencimiento DateTime? 
   
-  userId           String    // Para que solo tú veas tus tareas
+  userId           String    
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 }
@@ -135,16 +134,46 @@ model Tarea {
 model Cliente {
   id             String   @id @default(cuid())
   nombre         String
-  identificacion String?  // Cédula o NIT
+  identificacion String?  
   email          String?
   telefono       String?
   direccion      String?
   notas          String?  @db.Text
   
-  userId         String   // Para que los clientes sean privados de tu cuenta
+  userId         String   
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  // Relación: Un cliente puede tener múltiples casos
   casos          Caso[]   
+}
+
+// ==========================================
+// NUEVOS MODELOS: PAGOS, SUSCRIPCIONES Y ARCHIVOS
+// ==========================================
+
+model Suscripcion {
+  id                     String    @id @default(cuid())
+  userId                 String    @unique // ID de Clerk del abogado
+  plan                   String    @default("GRATIS") // GRATIS o PRO
+  
+  // Conexión con Stripe o MercadoPago
+  clientePasarelaId      String?   @unique // ID del cliente en el banco
+  suscripcionPasarelaId  String?   @unique // ID de la suscripción mensual
+  estadoPago             String?   // "active", "past_due", "canceled"
+  fechaVencimiento       DateTime? 
+  
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
+}
+
+model Documento {
+  id          String   @id @default(cuid())
+  nombre      String   // Ej: "Demanda_CGP.pdf"
+  urlArchivo  String   // Enlace directo de Vercel Blob
+  tamanoBytes Int?
+  
+  casoId      String
+  caso        Caso     @relation(fields: [casoId], references: [id], onDelete: Cascade)
+
+  createdAt   DateTime @default(now())
 }
