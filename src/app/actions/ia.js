@@ -5,7 +5,7 @@ import { currentUser } from '@clerk/nextjs/server';
 import { PrismaClient } from '@prisma/client';
 import { get } from '@vercel/blob';
 
-// ¡ELIMINAMOS el require('pdf-parse') de aquí arriba para evitar el colapso global!
+// ¡Adiós a pdf-parse! Ya no lo necesitamos porque Gemini lee PDFs nativamente.
 
 const prisma = global.prisma || new PrismaClient();
 if (process.env.NODE_ENV !== 'production') global.prisma = prisma;
@@ -33,7 +33,7 @@ export async function obtenerExpedientesParaIA() {
 
     return casosConDocs;
   } catch (error) {
-    console.error("Error crítico obteniendo expedientes para IA:", error);
+    console.error("Error obteniendo expedientes:", error);
     return [];
   }
 }
@@ -48,7 +48,8 @@ export async function consultarAsistenteLegal(historialMensajes, casoId = null) 
     }
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-    let contextoExpediente = "";
+    // Contenedor para inyectar los PDFs nativamente
+    let pdfParts = [];
 
     if (casoId) {
       const documentos = await prisma.documento.findMany({
@@ -56,33 +57,32 @@ export async function consultarAsistenteLegal(historialMensajes, casoId = null) 
       });
 
       if (documentos.length > 0) {
-        contextoExpediente = "\n\n--- INICIO DEL MATERIAL PROBATORIO DEL EXPEDIENTE ---\n";
-        
-        // LA SOLUCIÓN (Lazy Loading): Llamamos al lector de PDFs solo aquí adentro.
-        // Esto protege a todo el resto del servidor de posibles cuelgues.
-        const pdf = require('pdf-parse');
-        
         for (const doc of documentos) {
           try {
+            // Descargamos el archivo privado usando el método oficial
             const result = await get(doc.urlArchivo, { access: 'private' });
             
             const responseStream = new Response(result.stream);
             const arrayBuffer = await responseStream.arrayBuffer();
             const buffer = Buffer.from(arrayBuffer);
             
-            const pdfData = await pdf(buffer);
-            contextoExpediente += `\nDocumento: ${doc.nombre}\nContenido Extraído:\n${pdfData.text}\n`;
+            // LA MAGIA: Empacamos el PDF completo en Base64 para que Gemini lo procese visualmente
+            pdfParts.push({
+              inlineData: {
+                data: buffer.toString("base64"),
+                mimeType: "application/pdf"
+              }
+            });
           } catch (e) {
-            console.error("Error leyendo PDF con SDK:", doc.nombre, e);
+            console.error("Error descargando PDF para IA:", doc.nombre, e);
           }
         }
-        contextoExpediente += "\n--- FIN DEL MATERIAL PROBATORIO ---\nSi el usuario te pregunta sobre su caso, usa EXCLUSIVAMENTE esta información extraída de los PDFs para responderle con precisión técnica.";
       }
     }
 
     const model = genAI.getGenerativeModel({ 
       model: "gemini-1.5-flash",
-      systemInstruction: `Eres 'Litis', la Inteligencia Artificial oficial de LitisApp. Eres un abogado experto en litigio en Colombia. Conoces a la perfección el Código General del Proceso (CGP), Código Sustantivo del Trabajo, CPACA y Código Civil. Tu objetivo es ayudar al usuario a redactar argumentos, estructurar demandas y proponer estrategias. Responde siempre formal, estructurado y al grano. Usa viñetas. ${contextoExpediente}`
+      systemInstruction: `Eres 'Litis', la Inteligencia Artificial oficial de LitisApp. Eres un abogado experto en litigio en Colombia. Conoces a la perfección el Código General del Proceso (CGP), Código Sustantivo del Trabajo, CPACA y Código Civil. Tu objetivo es ayudar al usuario a redactar argumentos, estructurar demandas y proponer estrategias. Responde siempre formal, estructurado y al grano. Usa viñetas. Si el usuario te envía documentos PDF adjuntos, analízalos meticulosamente para basar tus respuestas directamente en esa evidencia probatoria.`
     });
 
     let historialGemini = historialMensajes.slice(0, -1).map(msg => ({
@@ -94,14 +94,21 @@ export async function consultarAsistenteLegal(historialMensajes, casoId = null) 
       historialGemini.shift(); 
     }
 
-    const ultimoMensaje = historialMensajes[historialMensajes.length - 1].content;
+    const ultimoMensajeTexto = historialMensajes[historialMensajes.length - 1].content;
+
+    // Unimos la pregunta del usuario con los PDFs extraídos
+    const partesMensajeFinal = [
+      { text: ultimoMensajeTexto },
+      ...pdfParts
+    ];
 
     const chat = model.startChat({
       history: historialGemini,
       generationConfig: { temperature: 0.4 },
     });
 
-    const result = await chat.sendMessage(ultimoMensaje);
+    // Enviamos el paquete completo
+    const result = await chat.sendMessage(partesMensajeFinal);
     const response = await result.response;
     
     return { exito: true, respuesta: response.text() };
