@@ -5,8 +5,6 @@ import { currentUser } from '@clerk/nextjs/server';
 import { PrismaClient } from '@prisma/client';
 import { get } from '@vercel/blob';
 
-// ¡Adiós a pdf-parse! Ya no lo necesitamos porque Gemini lee PDFs nativamente.
-
 const prisma = global.prisma || new PrismaClient();
 if (process.env.NODE_ENV !== 'production') global.prisma = prisma;
 
@@ -48,7 +46,6 @@ export async function consultarAsistenteLegal(historialMensajes, casoId = null) 
     }
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-    // Contenedor para inyectar los PDFs nativamente
     let pdfParts = [];
 
     if (casoId) {
@@ -59,14 +56,12 @@ export async function consultarAsistenteLegal(historialMensajes, casoId = null) 
       if (documentos.length > 0) {
         for (const doc of documentos) {
           try {
-            // Descargamos el archivo privado usando el método oficial
             const result = await get(doc.urlArchivo, { access: 'private' });
             
             const responseStream = new Response(result.stream);
             const arrayBuffer = await responseStream.arrayBuffer();
             const buffer = Buffer.from(arrayBuffer);
             
-            // LA MAGIA: Empacamos el PDF completo en Base64 para que Gemini lo procese visualmente
             pdfParts.push({
               inlineData: {
                 data: buffer.toString("base64"),
@@ -80,35 +75,34 @@ export async function consultarAsistenteLegal(historialMensajes, casoId = null) 
       }
     }
 
+    // CAMBIO ESTRATÉGICO: gemini-1.5-pro es el modelo élite para lectura de documentos largos
     const model = genAI.getGenerativeModel({ 
-      model: "gemini-1.5-flash",
+      model: "gemini-1.5-pro",
       systemInstruction: `Eres 'Litis', la Inteligencia Artificial oficial de LitisApp. Eres un abogado experto en litigio en Colombia. Conoces a la perfección el Código General del Proceso (CGP), Código Sustantivo del Trabajo, CPACA y Código Civil. Tu objetivo es ayudar al usuario a redactar argumentos, estructurar demandas y proponer estrategias. Responde siempre formal, estructurado y al grano. Usa viñetas. Si el usuario te envía documentos PDF adjuntos, analízalos meticulosamente para basar tus respuestas directamente en esa evidencia probatoria.`
     });
 
-    let historialGemini = historialMensajes.slice(0, -1).map(msg => ({
-      role: msg.role === 'assistant' ? 'model' : 'user',
-      parts: [{ text: msg.content }]
-    }));
-
-    if (historialGemini.length > 0 && historialGemini[0].role === 'model') {
-      historialGemini.shift(); 
+    // Construimos el historial de forma manual y robusta para evitar errores de la API
+    const contents = [];
+    const mensajesAnteriores = historialMensajes.slice(0, -1);
+    
+    for (const msg of mensajesAnteriores) {
+        contents.push({
+            role: msg.role === 'assistant' ? 'model' : 'user',
+            parts: [{ text: msg.content }]
+        });
     }
 
+    // Inyectamos los PDFs secretamente en la última pregunta del usuario
     const ultimoMensajeTexto = historialMensajes[historialMensajes.length - 1].content;
-
-    // Unimos la pregunta del usuario con los PDFs extraídos
-    const partesMensajeFinal = [
-      { text: ultimoMensajeTexto },
-      ...pdfParts
-    ];
-
-    const chat = model.startChat({
-      history: historialGemini,
-      generationConfig: { temperature: 0.4 },
+    const partesUltimoMensaje = [{ text: ultimoMensajeTexto }, ...pdfParts];
+    
+    contents.push({
+        role: 'user',
+        parts: partesUltimoMensaje
     });
 
-    // Enviamos el paquete completo
-    const result = await chat.sendMessage(partesMensajeFinal);
+    // Usamos generateContent en lugar de startChat para procesar archivos binarios pesados
+    const result = await model.generateContent({ contents });
     const response = await result.response;
     
     return { exito: true, respuesta: response.text() };
