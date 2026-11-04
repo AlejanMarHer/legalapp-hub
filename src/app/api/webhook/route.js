@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
-import { MercadoPagoConfig, Payment, PreApproval } from 'mercadopago';
+import { MercadoPagoConfig, PreApproval } from 'mercadopago';
 
 const prisma = global.prisma || new PrismaClient();
 if (process.env.NODE_ENV !== 'production') global.prisma = prisma;
@@ -11,76 +11,55 @@ const client = new MercadoPagoConfig({
 
 export async function POST(request) {
   try {
-    // Mercado Pago a veces envía los datos por la URL y otras por el cuerpo del JSON
     const searchParams = request.nextUrl.searchParams;
     let topic = searchParams.get('topic') || searchParams.get('type');
     let id = searchParams.get('data.id') || searchParams.get('id');
 
-    // Intentamos extraer del JSON si no vienen en la URL
     try {
       const body = await request.json();
       if (!topic) topic = body.type || body.topic || body.action;
       if (!id) id = body.data?.id;
-    } catch (e) {
-      // Ignorar si no hay JSON
-    }
+    } catch (e) {}
 
-    if (!id || !topic) {
-      return new NextResponse("Faltan parámetros", { status: 400 });
-    }
+    if (!id || !topic) return new NextResponse("Faltan datos", { status: 400 });
 
-    // 1. ESCUCHAR PAGOS APROBADOS (Maneja el cobro de la tarjeta)
-    if (topic === 'payment' || topic === 'payment.created') {
-      const payment = new Payment(client);
-      const paymentData = await payment.get({ id });
-      
-      if (paymentData.status === 'approved' && paymentData.external_reference) {
-        const userId = paymentData.external_reference;
-        
-        // Al pagar, le damos 1 mes de acceso Pro desde hoy
-        const fechaVencimiento = new Date();
-        fechaVencimiento.setMonth(fechaVencimiento.getMonth() + 1);
+    console.log(`[WEBHOOK RECIBIDO] Topic: ${topic} | ID: ${id}`);
 
-        await prisma.suscripcion.upsert({
-          where: { userId: userId },
-          update: {
-            plan: 'PRO',
-            estadoPago: 'approved',
-            fechaVencimiento: fechaVencimiento
-          },
-          create: {
-            userId: userId,
-            plan: 'PRO',
-            estadoPago: 'approved',
-            fechaVencimiento: fechaVencimiento
-          }
-        });
-      }
-    }
-
-    // 2. ESCUCHAR CREACIÓN DE SUSCRIPCIONES (Guarda el ID del débito automático)
     if (topic === 'subscription_preapproval') {
       const preApproval = new PreApproval(client);
       const subData = await preApproval.get({ id });
       
-      if (subData.status === 'authorized' && subData.external_reference) {
-        await prisma.suscripcion.updateMany({
-          where: { userId: subData.external_reference },
-          data: {
-            mpPreapprovalId: subData.id,
-            estadoPago: 'authorized',
-            plan: 'PRO'
-          }
+      console.log(`[DATOS] Status: ${subData.status} | Plan ID: ${subData.preapproval_plan_id}`);
+
+      if (subData.status === 'authorized' && subData.preapproval_plan_id) {
+        // Buscamos al usuario que generó este Plan de Pago específico
+        const suscripcion = await prisma.suscripcion.findFirst({
+          where: { mpPreapprovalId: subData.preapproval_plan_id }
         });
+
+        if (suscripcion) {
+          const fechaVencimiento = new Date();
+          fechaVencimiento.setMonth(fechaVencimiento.getMonth() + 1);
+
+          await prisma.suscripcion.update({
+            where: { id: suscripcion.id },
+            data: {
+              plan: 'PRO',
+              estadoPago: 'authorized',
+              mpPreapprovalId: subData.id, // Reemplazamos el plan por la suscripción real
+              fechaVencimiento: fechaVencimiento
+            }
+          });
+          console.log(`[EXITO] Usuario actualizado a PRO.`);
+        } else {
+          console.log(`[ALERTA] No se encontró usuario para el Plan ID.`);
+        }
       }
     }
 
-    // Siempre debemos responder 200 OK rápido para que MP sepa que recibimos el mensaje
     return new NextResponse("OK", { status: 200 });
-
   } catch (error) {
     console.error("[WEBHOOK_ERROR]", error);
-    // Respondemos 200 incluso si fallamos, para que MP no bloquee nuestra API con reintentos infinitos
     return new NextResponse("OK", { status: 200 });
   }
 }
