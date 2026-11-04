@@ -8,11 +8,12 @@ import Link from 'next/link';
 import BotonReporteCliente from './BotonReporteCliente';
 import BotonResolverVencimiento from './BotonResolverVencimiento';
 import BotonRegistrarPago from './BotonRegistrarPago';
-import SubidorDocumentos from './SubidorDocumentos'; // NUEVO COMPONENTE
+import SubidorDocumentos from './SubidorDocumentos';
+import BotonCompartirEnlace from './BotonCompartirEnlace'; // NUEVO COMPONENTE
 
 // Importación de acciones
 import { obtenerConfiguracion } from '@/app/actions/configuracion';
-import { obtenerDocumentosCaso } from '@/app/actions/documentos'; // NUEVA ACCIÓN
+import { obtenerDocumentosCaso } from '@/app/actions/documentos';
 
 export const dynamic = 'force-dynamic';
 
@@ -69,7 +70,7 @@ export default async function ExpedienteDetallePage({ params }) {
           <div>
             <div className="flex items-center gap-3 mb-3">
               <span className="bg-emerald-100 text-emerald-800 text-xs font-bold px-3 py-1.5 rounded-lg border border-emerald-200">{caso.estadoInterno || 'Activo'}</span>
-              <span className="text-slate-500 text-sm font-bold uppercase tracking-wider">{caso.areaDerecho || 'Civil'} - {caso.claseProceso || 'Proceso'}</span>
+              <span className="text-slate-500 text-sm font-bold uppercase tracking-wider">{caso.areaDerecho || 'Civil'} {caso.claseProceso || 'Proceso'}</span>
             </div>
             <h1 className="text-2xl md:text-4xl font-black text-slate-900 tracking-tight">{caso.radicado || 'Sin Radicado Asignado'}</h1>
             <p className="text-slate-500 font-medium mt-2 flex items-center gap-2">
@@ -104,6 +105,11 @@ export default async function ExpedienteDetallePage({ params }) {
               nombreOficial={nombreOficial}
               logoBase64={config.logoBase64}
               firmaBase64={config.firmaBase64}
+            />
+            {/* NUEVO: BOTÓN PARA COMPARTIR EL PORTAL DE TRANSPARENCIA */}
+            <BotonCompartirEnlace 
+              publicToken={caso.publicToken} 
+              radicado={caso.radicado} 
             />
           </div>
         </div>

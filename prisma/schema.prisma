@@ -64,13 +64,19 @@ model Caso {
   // Relaciones secundarias
   liquidaciones       Liquidacion[]
   abonos              Abono[]
-  documentos          Documento[] // NUEVO: Para enlazar los PDFs de Vercel Blob al caso
+  documentos          Documento[] // Para enlazar los PDFs de Vercel Blob al caso
 
   // Campos del Radar Judicial
   radarUltimaConsulta  DateTime?
   radarUltimaActuacion String?
   radarFechaActuacion  DateTime?
   radarAlerta          Boolean   @default(false)
+
+  // ==========================================
+  // NUEVO: PORTAL DE TRANSPARENCIA PARA EL CLIENTE
+  // ==========================================
+  publicToken          String    @unique @default(uuid()) // Enlace único e invulnerable
+  isPublic             Boolean   @default(true)           // Permite al abogado apagar el portal
 }
 
 model Liquidacion {
@@ -147,14 +153,10 @@ model Cliente {
   casos          Caso[]   
 }
 
-// ==========================================
-// NUEVOS MODELOS: PAGOS, SUSCRIPCIONES Y ARCHIVOS
-// ==========================================
-
 model Suscripcion {
-  id                    String    @id @default(cuid())
-  userId                String    @unique // ID de Clerk del abogado
-  plan                  String    @default("GRATIS") // GRATIS o PRO
+  id                  String    @id @default(cuid())
+  userId              String    @unique // ID de Clerk del abogado
+  plan                String    @default("GRATIS") // GRATIS o PRO
   
   // Conexión con Mercado Pago
   mpPreapprovalId       String?   @unique // ID de la suscripción mensual en MP
