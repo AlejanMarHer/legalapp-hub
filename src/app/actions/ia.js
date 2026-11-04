@@ -10,32 +10,49 @@ const pdf = require('pdf-parse');
 const prisma = global.prisma || new PrismaClient();
 if (process.env.NODE_ENV !== 'production') global.prisma = prisma;
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-
 export async function obtenerExpedientesParaIA() {
-  const user = await currentUser();
-  if (!user) return [];
-  
-  const casos = await prisma.caso.findMany({
-    where: { userId: user.id },
-    select: { id: true, radicado: true, demandante: true, demandado: true, documentos: true },
-    orderBy: { updatedAt: 'desc' }
-  });
-  
-  return casos.map(c => ({
-    id: c.id,
-    nombre: c.radicado ? `${c.radicado} - ${c.demandante} VS ${c.demandado}` : `${c.demandante} VS ${c.demandado}`,
-    tieneDocs: c.documentos.length > 0
-  }));
+  try {
+    const user = await currentUser();
+    if (!user) return [];
+
+    const casos = await prisma.caso.findMany({
+      where: { userId: user.id },
+      orderBy: { updatedAt: 'desc' }
+    });
+
+    // SOLUCIÓN PRISMA: Contamos los documentos manualmente por cada caso.
+    // Esto evita que la aplicación colapse si faltan relaciones en el schema.prisma
+    const casosConDocs = await Promise.all(casos.map(async (c) => {
+      const docsCount = await prisma.documento.count({
+        where: { casoId: c.id }
+      });
+      return {
+        id: c.id,
+        nombre: c.radicado ? `${c.radicado} - ${c.demandante} VS ${c.demandado}` : `${c.demandante} VS ${c.demandado}`,
+        tieneDocs: docsCount > 0
+      };
+    }));
+
+    return casosConDocs;
+  } catch (error) {
+    console.error("Error crítico obteniendo expedientes para IA:", error);
+    return [];
+  }
 }
 
 export async function consultarAsistenteLegal(historialMensajes, casoId = null) {
-  const user = await currentUser();
-  if (!user) throw new Error("No autenticado");
-
-  let contextoExpediente = "";
-
   try {
+    const user = await currentUser();
+    if (!user) throw new Error("No autenticado");
+
+    // SOLUCIÓN GEMINI: Verificamos que la llave exista antes de inicializar
+    if (!process.env.GEMINI_API_KEY) {
+      throw new Error("Falta configurar la GEMINI_API_KEY en las variables de Vercel.");
+    }
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+
+    let contextoExpediente = "";
+
     if (casoId) {
       const documentos = await prisma.documento.findMany({
         where: { casoId: casoId, caso: { userId: user.id } }
@@ -46,10 +63,8 @@ export async function consultarAsistenteLegal(historialMensajes, casoId = null) 
         
         for (const doc of documentos) {
           try {
-            // Usamos el método oficial 'get' para descargar de forma privada
             const result = await get(doc.urlArchivo, { access: 'private' });
             
-            // Convertimos el stream seguro a un formato legible para pdf-parse
             const responseStream = new Response(result.stream);
             const arrayBuffer = await responseStream.arrayBuffer();
             const buffer = Buffer.from(arrayBuffer);
