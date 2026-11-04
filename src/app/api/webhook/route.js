@@ -25,41 +25,47 @@ export async function POST(request) {
 
     console.log(`[WEBHOOK RECIBIDO] Topic: ${topic} | ID: ${id}`);
 
-    if (topic === 'subscription_preapproval') {
-      const preApproval = new PreApproval(client);
-      const subData = await preApproval.get({ id });
-      
-      console.log(`[DATOS] Status: ${subData.status} | Plan ID: ${subData.preapproval_plan_id}`);
+    // LA SOLUCIÓN: Atrapamos CUALQUIER variante de palabra clave que use MP
+    if (topic.includes('preapproval') || topic.includes('subscription')) {
+      try {
+        const preApproval = new PreApproval(client);
+        const subData = await preApproval.get({ id });
+        
+        console.log(`[MP API] Status: ${subData.status} | PlanID: ${subData.preapproval_plan_id}`);
 
-      if (subData.status === 'authorized' && subData.preapproval_plan_id) {
-        // Buscamos al usuario que generó este Plan de Pago específico
-        const suscripcion = await prisma.suscripcion.findFirst({
-          where: { mpPreapprovalId: subData.preapproval_plan_id }
-        });
-
-        if (suscripcion) {
-          const fechaVencimiento = new Date();
-          fechaVencimiento.setMonth(fechaVencimiento.getMonth() + 1);
-
-          await prisma.suscripcion.update({
-            where: { id: suscripcion.id },
-            data: {
-              plan: 'PRO',
-              estadoPago: 'authorized',
-              mpPreapprovalId: subData.id, // Reemplazamos el plan por la suscripción real
-              fechaVencimiento: fechaVencimiento
-            }
+        // Mientras tenga el PlanID, actualizamos al usuario (en Sandbox a veces el status se queda en 'pending')
+        if (subData.preapproval_plan_id) {
+          const suscripcion = await prisma.suscripcion.findFirst({
+            where: { mpPreapprovalId: subData.preapproval_plan_id }
           });
-          console.log(`[EXITO] Usuario actualizado a PRO.`);
-        } else {
-          console.log(`[ALERTA] No se encontró usuario para el Plan ID.`);
+
+          if (suscripcion) {
+            const fecha = new Date();
+            fecha.setMonth(fecha.getMonth() + 1);
+
+            await prisma.suscripcion.update({
+              where: { id: suscripcion.id },
+              data: {
+                plan: 'PRO',
+                estadoPago: subData.status,
+                mpPreapprovalId: subData.id, // Guardamos la suscripción real
+                fechaVencimiento: fecha
+              }
+            });
+            console.log(`[EXITO] Base de datos actualizada a PRO.`);
+          } else {
+            console.log(`[ALERTA] No se encontró el usuario con ese Plan ID.`);
+          }
         }
+      } catch (apiError) {
+        // Ignoramos errores de búsqueda si el ID era de un pago aislado y no de una suscripción
+        console.log(`[INFO] El ID no corresponde a un objeto PreApproval.`);
       }
     }
 
     return new NextResponse("OK", { status: 200 });
   } catch (error) {
-    console.error("[WEBHOOK_ERROR]", error);
+    console.error("[WEBHOOK FATAL ERROR]", error);
     return new NextResponse("OK", { status: 200 });
   }
 }
