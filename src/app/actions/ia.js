@@ -5,7 +5,7 @@ import { currentUser } from '@clerk/nextjs/server';
 import { PrismaClient } from '@prisma/client';
 import { get } from '@vercel/blob';
 
-const pdf = require('pdf-parse');
+// ¡ELIMINAMOS el require('pdf-parse') de aquí arriba para evitar el colapso global!
 
 const prisma = global.prisma || new PrismaClient();
 if (process.env.NODE_ENV !== 'production') global.prisma = prisma;
@@ -20,8 +20,6 @@ export async function obtenerExpedientesParaIA() {
       orderBy: { updatedAt: 'desc' }
     });
 
-    // SOLUCIÓN PRISMA: Contamos los documentos manualmente por cada caso.
-    // Esto evita que la aplicación colapse si faltan relaciones en el schema.prisma
     const casosConDocs = await Promise.all(casos.map(async (c) => {
       const docsCount = await prisma.documento.count({
         where: { casoId: c.id }
@@ -45,7 +43,6 @@ export async function consultarAsistenteLegal(historialMensajes, casoId = null) 
     const user = await currentUser();
     if (!user) throw new Error("No autenticado");
 
-    // SOLUCIÓN GEMINI: Verificamos que la llave exista antes de inicializar
     if (!process.env.GEMINI_API_KEY) {
       throw new Error("Falta configurar la GEMINI_API_KEY en las variables de Vercel.");
     }
@@ -60,6 +57,10 @@ export async function consultarAsistenteLegal(historialMensajes, casoId = null) 
 
       if (documentos.length > 0) {
         contextoExpediente = "\n\n--- INICIO DEL MATERIAL PROBATORIO DEL EXPEDIENTE ---\n";
+        
+        // LA SOLUCIÓN (Lazy Loading): Llamamos al lector de PDFs solo aquí adentro.
+        // Esto protege a todo el resto del servidor de posibles cuelgues.
+        const pdf = require('pdf-parse');
         
         for (const doc of documentos) {
           try {
