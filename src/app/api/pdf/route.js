@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import { currentUser } from '@clerk/nextjs/server';
+import { head } from '@vercel/blob';
 
 export async function GET(request) {
-  // 1. Verificamos que seas tú quien está pidiendo el archivo
   const user = await currentUser();
   if (!user) return new NextResponse("No autorizado", { status: 401 });
 
@@ -10,22 +10,19 @@ export async function GET(request) {
   if (!url) return new NextResponse("Falta la URL del documento", { status: 400 });
 
   try {
-    // 2. Le pedimos el archivo directamente a Vercel Blob, usando nuestra llave secreta,
-    // al igual que hicimos con Litis IA.
-    const response = await fetch(url, {
-      headers: {
-        Authorization: `Bearer ${process.env.BLOB_READ_WRITE_TOKEN}`
-      }
-    });
+    // 1. Usamos la función oficial 'head' de Vercel Blob. 
+    // Esta función usa internamente la variable de entorno BLOB_READ_WRITE_TOKEN
+    // para autorizar la petición y devolvernos una 'downloadUrl' (URL pre-firmada).
+    const blobDetails = await head(url);
+
+    // 2. Hacemos el fetch a la URL pre-firmada.
+    const response = await fetch(blobDetails.downloadUrl);
 
     if (!response.ok) {
-       return new NextResponse(`Vercel Blob denegó el acceso (Status: ${response.status})`, { status: response.status });
+       return new NextResponse(`Error al descargar de la URL pre-firmada (Status: ${response.status})`, { status: response.status });
     }
 
-    // 3. LA MAGIA ESTÁ AQUÍ: En lugar de descargar todo en un ArrayBuffer y 
-    // pasarlo a memoria (lo que dispara el límite de 4.5MB), 
-    // pasamos el 'body' de la respuesta (que es un ReadableStream) 
-    // DIRECTAMENTE a NextResponse. Esto crea una tubería entre Vercel Blob y tu navegador.
+    // 3. Devolvemos el PDF como un stream para evitar límites de memoria
     return new NextResponse(response.body, {
       headers: {
         'Content-Type': 'application/pdf',
