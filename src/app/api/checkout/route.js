@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { currentUser } from '@clerk/nextjs/server';
 import { PrismaClient } from '@prisma/client';
-import { MercadoPagoConfig, PreApproval } from 'mercadopago';
+import { MercadoPagoConfig, PreApprovalPlan } from 'mercadopago';
 
 const prisma = global.prisma || new PrismaClient();
 if (process.env.NODE_ENV !== 'production') global.prisma = prisma;
@@ -18,9 +18,6 @@ export async function POST(request) {
       return new NextResponse("No autorizado", { status: 401 });
     }
 
-    // Extraemos el correo del usuario (Mercado Pago lo exige para suscripciones)
-    const userEmail = user.emailAddresses[0]?.emailAddress;
-
     let suscripcion = await prisma.suscripcion.findUnique({
       where: { userId: user.id }
     });
@@ -31,14 +28,12 @@ export async function POST(request) {
       });
     }
 
-    // Usamos PreApproval (Suscripción individual ligada a este usuario)
-    const preApproval = new PreApproval(client);
+    // Volvemos a PreApprovalPlan (Genera un link de cobro universal, a prueba de fallos)
+    const preApprovalPlan = new PreApprovalPlan(client);
     
-    const sub = await preApproval.create({
+    const plan = await preApprovalPlan.create({
       body: {
         reason: 'LitisApp Pro - Suscripción Mensual',
-        external_reference: user.id, // Para saber quién pagó en el webhook
-        payer_email: userEmail,      // OBLIGATORIO para Mercado Pago
         auto_recurring: {
           frequency: 1,
           frequency_type: 'months',
@@ -46,17 +41,17 @@ export async function POST(request) {
           currency_id: 'COP'
         },
         back_url: `${process.env.APP_URL}/dashboard/suscripcion?success=true`,
-        status: 'pending'
+        external_reference: user.id, // VITAL: Para el webhook
       }
     });
 
-    return NextResponse.json({ url: sub.init_point });
+    // Respondemos con JSON para que el frontend haga la redirección visual
+    return NextResponse.json({ url: plan.init_point });
 
   } catch (error) {
-    // Mejoramos el registro del error para que Vercel nos diga exactamente qué falló
     console.error("[MERCADOPAGO_ERROR]", error);
     return NextResponse.json(
-      { error: "Error en Mercado Pago", detalle: error.message }, 
+      { error: "Error interno conectando con Mercado Pago" }, 
       { status: 500 }
     );
   }
