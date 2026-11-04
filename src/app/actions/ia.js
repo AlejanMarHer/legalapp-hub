@@ -3,8 +3,8 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { currentUser } from '@clerk/nextjs/server';
 import { PrismaClient } from '@prisma/client';
+import { head } from '@vercel/blob'; // Importamos la herramienta de Vercel
 
-// SOLUCIÓN VERCEL: Usamos require nativo en lugar de import para librerías CommonJS
 const pdf = require('pdf-parse');
 
 const prisma = global.prisma || new PrismaClient();
@@ -12,7 +12,6 @@ if (process.env.NODE_ENV !== 'production') global.prisma = prisma;
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-// 1. FUNCIÓN: Trae los casos del abogado para llenar el menú desplegable del chat
 export async function obtenerExpedientesParaIA() {
   const user = await currentUser();
   if (!user) return [];
@@ -30,7 +29,6 @@ export async function obtenerExpedientesParaIA() {
   }));
 }
 
-// 2. FUNCIÓN PRINCIPAL ACTUALIZADA: Ahora recibe el casoId y lee los PDFs
 export async function consultarAsistenteLegal(historialMensajes, casoId = null) {
   const user = await currentUser();
   if (!user) throw new Error("No autenticado");
@@ -38,7 +36,6 @@ export async function consultarAsistenteLegal(historialMensajes, casoId = null) 
   let contextoExpediente = "";
 
   try {
-    // Si el usuario seleccionó un caso, buscamos sus documentos en la base de datos
     if (casoId) {
       const documentos = await prisma.documento.findMany({
         where: { casoId: casoId, caso: { userId: user.id } }
@@ -47,14 +44,12 @@ export async function consultarAsistenteLegal(historialMensajes, casoId = null) 
       if (documentos.length > 0) {
         contextoExpediente = "\n\n--- INICIO DEL MATERIAL PROBATORIO DEL EXPEDIENTE ---\n";
         
-        // Descargamos y leemos cada PDF asociado al caso
         for (const doc of documentos) {
           try {
-            const response = await fetch(doc.urlArchivo, {
-  headers: {
-    Authorization: `Bearer ${process.env.BLOB_READ_WRITE_TOKEN}`
-  }
-});
+            // Le pedimos a Vercel la URL temporal y autorizada
+            const blobDetails = await head(doc.urlArchivo);
+            const response = await fetch(blobDetails.downloadUrl);
+            
             const arrayBuffer = await response.arrayBuffer();
             const buffer = Buffer.from(arrayBuffer);
             const pdfData = await pdf(buffer);
@@ -67,7 +62,6 @@ export async function consultarAsistenteLegal(historialMensajes, casoId = null) 
       }
     }
 
-    // Inicializamos Gemini inyectándole la instrucción base + el texto de los PDFs (si los hay)
     const model = genAI.getGenerativeModel({ 
       model: "gemini-3.8-flash",
       systemInstruction: `Eres 'Litis', la Inteligencia Artificial oficial de LitisApp. Eres un abogado experto en litigio en Colombia. Conoces a la perfección el Código General del Proceso (CGP), Código Sustantivo del Trabajo, CPACA y Código Civil. Tu objetivo es ayudar al usuario a redactar argumentos, estructurar demandas y proponer estrategias. Responde siempre formal, estructurado y al grano. Usa viñetas. ${contextoExpediente}`
