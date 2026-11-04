@@ -162,7 +162,7 @@ export default async function ExpedienteDetallePage({ params }) {
                           </div>
                         </div>
                         <a 
-                          href={doc.urlArchivo} 
+                          href={`/api/pdf?url=${encodeURIComponent(doc.urlArchivo)}`} 
                           target="_blank" 
                           rel="noopener noreferrer"
                           className="bg-white border border-slate-200 text-slate-700 hover:text-indigo-600 hover:border-indigo-200 font-bold text-xs py-2 px-4 rounded-lg shadow-sm transition"

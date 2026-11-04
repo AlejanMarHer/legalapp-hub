@@ -50,7 +50,11 @@ export async function consultarAsistenteLegal(historialMensajes, casoId = null) 
         // Descargamos y leemos cada PDF asociado al caso
         for (const doc of documentos) {
           try {
-            const response = await fetch(doc.urlArchivo);
+            const response = await fetch(doc.urlArchivo, {
+  headers: {
+    Authorization: `Bearer ${process.env.BLOB_READ_WRITE_TOKEN}`
+  }
+});
             const arrayBuffer = await response.arrayBuffer();
             const buffer = Buffer.from(arrayBuffer);
             const pdfData = await pdf(buffer);
