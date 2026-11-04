@@ -1,12 +1,11 @@
 import { NextResponse } from 'next/server';
 import { currentUser } from '@clerk/nextjs/server';
 import { PrismaClient } from '@prisma/client';
-import { MercadoPagoConfig, PreApprovalPlan } from 'mercadopago';
+import { MercadoPagoConfig, PreApproval } from 'mercadopago';
 
 const prisma = global.prisma || new PrismaClient();
 if (process.env.NODE_ENV !== 'production') global.prisma = prisma;
 
-// Inicializamos el SDK de Mercado Pago con tu Access Token
 const client = new MercadoPagoConfig({ 
   accessToken: process.env.MP_ACCESS_TOKEN,
   options: { timeout: 5000 } 
@@ -19,7 +18,9 @@ export async function POST(request) {
       return new NextResponse("No autorizado", { status: 401 });
     }
 
-    // 1. Aseguramos el registro en la base de datos
+    // Extraemos el correo del usuario (Mercado Pago lo exige para suscripciones)
+    const userEmail = user.emailAddresses[0]?.emailAddress;
+
     let suscripcion = await prisma.suscripcion.findUnique({
       where: { userId: user.id }
     });
@@ -30,30 +31,33 @@ export async function POST(request) {
       });
     }
 
-    // 2. Creamos el plan de cobro recurrente en Mercado Pago
-    const preApprovalPlan = new PreApprovalPlan(client);
+    // Usamos PreApproval (Suscripción individual ligada a este usuario)
+    const preApproval = new PreApproval(client);
     
-    const plan = await preApprovalPlan.create({
+    const sub = await preApproval.create({
       body: {
         reason: 'LitisApp Pro - Suscripción Mensual',
+        external_reference: user.id, // Para saber quién pagó en el webhook
+        payer_email: userEmail,      // OBLIGATORIO para Mercado Pago
         auto_recurring: {
           frequency: 1,
           frequency_type: 'months',
           transaction_amount: 59900,
-          currency_id: 'COP' // Moneda local
+          currency_id: 'COP'
         },
         back_url: `${process.env.APP_URL}/dashboard/suscripcion?success=true`,
-        // external_reference es VITAL: Nos permite identificar quién pagó cuando MP envíe la confirmación
-        external_reference: user.id, 
+        status: 'pending'
       }
     });
 
-    // 3. Redirigimos al usuario a la pasarela segura de Mercado Pago (init_point)
-    // Usamos el status 303 (See Other) para que el formulario POST se transforme en un GET hacia MP
-    return NextResponse.redirect(plan.init_point, { status: 303 });
+    return NextResponse.json({ url: sub.init_point });
 
   } catch (error) {
+    // Mejoramos el registro del error para que Vercel nos diga exactamente qué falló
     console.error("[MERCADOPAGO_ERROR]", error);
-    return new NextResponse("Error interno al crear checkout", { status: 500 });
+    return NextResponse.json(
+      { error: "Error en Mercado Pago", detalle: error.message }, 
+      { status: 500 }
+    );
   }
 }
