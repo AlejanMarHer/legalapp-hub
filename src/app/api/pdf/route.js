@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import { currentUser } from '@clerk/nextjs/server';
-import { head } from '@vercel/blob';
 
 export async function GET(request) {
   // 1. Verificamos que seas tú quien está pidiendo el archivo
@@ -11,15 +10,31 @@ export async function GET(request) {
   if (!url) return new NextResponse("Falta la URL del documento", { status: 400 });
 
   try {
-    // 2. Le pedimos a Vercel Blob un "Pase Temporal" para acceder al archivo privado
-    const blobDetails = await head(url);
+    // 2. Le pedimos el archivo directamente a Vercel Blob, usando nuestra llave secreta,
+    // al igual que hicimos con Litis IA.
+    const response = await fetch(url, {
+      headers: {
+        Authorization: `Bearer ${process.env.BLOB_READ_WRITE_TOKEN}`
+      }
+    });
 
-    // 3. Redirigimos tu navegador DIRECTAMENTE al CDN de Vercel usando el pase temporal.
-    // Esto es instantáneo, ahorra memoria y esquiva cualquier límite de peso del servidor.
-    return NextResponse.redirect(blobDetails.downloadUrl);
-    
+    if (!response.ok) {
+       return new NextResponse(`Vercel Blob denegó el acceso (Status: ${response.status})`, { status: response.status });
+    }
+
+    // 3. LA MAGIA ESTÁ AQUÍ: En lugar de descargar todo en un ArrayBuffer y 
+    // pasarlo a memoria (lo que dispara el límite de 4.5MB), 
+    // pasamos el 'body' de la respuesta (que es un ReadableStream) 
+    // DIRECTAMENTE a NextResponse. Esto crea una tubería entre Vercel Blob y tu navegador.
+    return new NextResponse(response.body, {
+      headers: {
+        'Content-Type': 'application/pdf',
+        'Content-Disposition': 'inline', 
+      }
+    });
+
   } catch (error) {
-    console.error("Error en el puente PDF:", error);
+    console.error("Error en el puente PDF Streaming:", error);
     return new NextResponse(`Error interno: ${error.message}`, { status: 500 });
   }
 }
