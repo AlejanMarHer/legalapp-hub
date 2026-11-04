@@ -3,7 +3,7 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { currentUser } from '@clerk/nextjs/server';
 import { PrismaClient } from '@prisma/client';
-import { head } from '@vercel/blob'; // Importamos la herramienta de Vercel
+import { get } from '@vercel/blob';
 
 const pdf = require('pdf-parse');
 
@@ -46,16 +46,18 @@ export async function consultarAsistenteLegal(historialMensajes, casoId = null) 
         
         for (const doc of documentos) {
           try {
-            // Le pedimos a Vercel la URL temporal y autorizada
-            const blobDetails = await head(doc.urlArchivo);
-            const response = await fetch(blobDetails.downloadUrl);
+            // Usamos el método oficial 'get' para descargar de forma privada
+            const result = await get(doc.urlArchivo, { access: 'private' });
             
-            const arrayBuffer = await response.arrayBuffer();
+            // Convertimos el stream seguro a un formato legible para pdf-parse
+            const responseStream = new Response(result.stream);
+            const arrayBuffer = await responseStream.arrayBuffer();
             const buffer = Buffer.from(arrayBuffer);
+            
             const pdfData = await pdf(buffer);
             contextoExpediente += `\nDocumento: ${doc.nombre}\nContenido Extraído:\n${pdfData.text}\n`;
           } catch (e) {
-            console.error("Error leyendo PDF:", doc.nombre, e);
+            console.error("Error leyendo PDF con SDK:", doc.nombre, e);
           }
         }
         contextoExpediente += "\n--- FIN DEL MATERIAL PROBATORIO ---\nSi el usuario te pregunta sobre su caso, usa EXCLUSIVAMENTE esta información extraída de los PDFs para responderle con precisión técnica.";
@@ -63,7 +65,7 @@ export async function consultarAsistenteLegal(historialMensajes, casoId = null) 
     }
 
     const model = genAI.getGenerativeModel({ 
-      model: "gemini-3.8-flash",
+      model: "gemini-1.5-flash",
       systemInstruction: `Eres 'Litis', la Inteligencia Artificial oficial de LitisApp. Eres un abogado experto en litigio en Colombia. Conoces a la perfección el Código General del Proceso (CGP), Código Sustantivo del Trabajo, CPACA y Código Civil. Tu objetivo es ayudar al usuario a redactar argumentos, estructurar demandas y proponer estrategias. Responde siempre formal, estructurado y al grano. Usa viñetas. ${contextoExpediente}`
     });
 
