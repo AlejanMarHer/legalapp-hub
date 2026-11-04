@@ -3,6 +3,7 @@ import { currentUser } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { verificarEstadoSuscripcion } from '@/app/actions/suscripciones';
+import BotonCheckout from './BotonCheckout';
 
 export const dynamic = 'force-dynamic';
 
@@ -121,13 +122,11 @@ export default async function SuscripcionPage() {
                 SUSCRIPCIÓN ACTIVA
               </button>
             ) : (
-              <button className="w-full bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-300 hover:to-orange-400 text-slate-900 font-black py-4 rounded-xl shadow-[0_10px_25px_rgba(245,158,11,0.5)] transition-all hover:scale-105">
-                ACTUALIZAR A PRO AHORA
-              </button>
+              <BotonCheckout />
             )}
             
             <p className="text-center text-blue-300 text-xs mt-4 opacity-80">
-              Cancela cuando quieras. Cobro seguro mediante MercadoPago/Stripe.
+              Cancela cuando quieras. Cobro seguro mediante MercadoPago.
             </p>
           </div>
         </div>
