@@ -11,22 +11,39 @@ export default function AsistenteIAPage() {
   const [input, setInput] = useState('');
   const [cargando, setCargando] = useState(false);
   
-  // Nuevos estados para el selector de expedientes
   const [casos, setCasos] = useState([]);
   const [casoSeleccionado, setCasoSeleccionado] = useState('');
+  const [cargandoCasos, setCargandoCasos] = useState(true);
   
   const finalChatRef = useRef(null);
 
-  // Cargar la lista de expedientes al abrir el chat
+  // Carga inicial robusta de los expedientes
   useEffect(() => {
+    let montado = true;
+
     async function cargarCasos() {
-      const data = await obtenerExpedientesParaIA();
-      setCasos(data);
+      try {
+        console.log("Iniciando carga de expedientes para IA...");
+        const data = await obtenerExpedientesParaIA();
+        console.log("Expedientes recibidos del servidor:", data);
+        
+        if (montado) {
+          setCasos(data || []);
+        }
+      } catch (error) {
+        console.error("Error al cargar los expedientes:", error);
+      } finally {
+        if (montado) {
+          setCargandoCasos(false);
+        }
+      }
     }
+    
     cargarCasos();
+
+    return () => { montado = false; };
   }, []);
 
-  // Autoscroll hacia el último mensaje
   useEffect(() => {
     finalChatRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [mensajes]);
@@ -38,13 +55,11 @@ export default function AsistenteIAPage() {
     const textoUsuario = input.trim();
     setInput('');
     
-    // Agregamos el mensaje del usuario a la pantalla
     const nuevoHistorial = [...mensajes, { role: 'user', content: textoUsuario }];
     setMensajes(nuevoHistorial);
     setCargando(true);
 
     try {
-      // Le pasamos a la IA tanto el historial de chat como el ID del caso que elegimos
       const resultado = await consultarAsistenteLegal(nuevoHistorial, casoSeleccionado);
       
       if (resultado.exito) {
@@ -89,9 +104,11 @@ export default function AsistenteIAPage() {
           <select 
             value={casoSeleccionado}
             onChange={(e) => setCasoSeleccionado(e.target.value)}
-            className="text-sm font-bold text-slate-700 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 w-full max-w-xl outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition cursor-pointer"
+            disabled={cargandoCasos}
+            className="text-sm font-bold text-slate-700 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 w-full max-w-xl outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition cursor-pointer disabled:opacity-50"
           >
             <option value="">Consultas Generales (Sin expediente enlazado)</option>
+            {cargandoCasos && <option value="" disabled>Cargando expedientes...</option>}
             {casos.map(c => (
               <option key={c.id} value={c.id}>
                 {c.nombre} {c.tieneDocs ? '(📑 Tiene PDFs)' : '(⚠️ Sin PDFs)'}
