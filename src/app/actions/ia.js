@@ -47,37 +47,16 @@ export async function consultarAsistenteLegal(historialMensajes, casoId = null) 
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
     // =====================================================================
-    // 1. AUTO-DESCUBRIMIENTO DE MODELO (Solución definitiva al error 404)
+    // ASIGNACIÓN DIRECTA DEL MODELO EXIGIDO POR GOOGLE
     // =====================================================================
-    const urlModelos = `https://generativelanguage.googleapis.com/v1beta/models?key=${process.env.GEMINI_API_KEY}`;
-    const fetchModelos = await fetch(urlModelos);
-    const dataModelos = await fetchModelos.json();
-    
-    if (!dataModelos.models) {
-      throw new Error("La API Key es inválida o no tiene modelos asignados en Google.");
-    }
-
-    // Filtramos para obtener solo los que pueden generar contenido
-    const modelosSoportados = dataModelos.models.filter(m => 
-      m.supportedGenerationMethods && m.supportedGenerationMethods.includes("generateContent")
-    );
-
-    // Prioridad: Seleccionamos el mejor modelo "Pro" disponible. Si no hay, bajamos al "Flash".
-    let modeloIdeal = modelosSoportados.find(m => m.name.includes("pro"));
-    if (!modeloIdeal) modeloIdeal = modelosSoportados.find(m => m.name.includes("flash"));
-    if (!modeloIdeal) modeloIdeal = modelosSoportados[0]; // El primero que funcione como última opción
-
-    // Limpiamos el prefijo "models/" que devuelve Google
-    const aliasFinal = modeloIdeal.name.replace("models/", "");
-    console.log("✅ Litis IA ha auto-seleccionado el modelo autorizado:", aliasFinal);
-
     const model = genAI.getGenerativeModel({ 
-      model: aliasFinal,
+      model: "gemini-3.1-pro-preview", // El alias exacto que pidió el error 404
       systemInstruction: `Eres 'Litis', la Inteligencia Artificial oficial de LitisApp. Eres un abogado experto en litigio en Colombia. Conoces a la perfección el Código General del Proceso (CGP), Código Sustantivo del Trabajo, CPACA y Código Civil. Tu objetivo es ayudar al usuario a redactar argumentos, estructurar demandas y proponer estrategias. Responde siempre formal, estructurado y al grano. Usa viñetas. Si el usuario te envía documentos PDF adjuntos, analízalos meticulosamente para basar tus respuestas directamente en esa evidencia probatoria.`
     });
-    // =====================================================================
 
-    // 2. PROCESAMIENTO DE LOS PDFs
+    // =====================================================================
+    // PROCESAMIENTO DE LOS PDFs DE VERCEL BLOB
+    // =====================================================================
     let pdfParts = [];
 
     if (casoId) {
@@ -107,7 +86,9 @@ export async function consultarAsistenteLegal(historialMensajes, casoId = null) 
       }
     }
 
-    // 3. ESTRUCTURACIÓN DEL CHAT
+    // =====================================================================
+    // ESTRUCTURACIÓN DEL CHAT Y ENVÍO DEL PAQUETE
+    // =====================================================================
     const contents = [];
     const mensajesAnteriores = historialMensajes.slice(0, -1);
     
@@ -126,7 +107,6 @@ export async function consultarAsistenteLegal(historialMensajes, casoId = null) 
         parts: partesUltimoMensaje
     });
 
-    // 4. EJECUCIÓN
     const result = await model.generateContent({ contents });
     const response = await result.response;
     
